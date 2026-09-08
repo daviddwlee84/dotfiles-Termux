@@ -106,4 +106,4 @@ startup 在 120 秒後逾時；`adb version` 也停滯，probe 自己啟動的�
 
 公開 repository 已建立：
 [github.com/daviddwlee84/dotfiles-Termux](https://github.com/daviddwlee84/dotfiles-Termux)。
-GitHub Actions CI 尚待執行，此紀錄不宣稱遠端 CI 已通過。
+[GitHub Actions run 34262880520](https://github.com/daviddwlee84/dotfiles-Termux/actions/runs/34262880520) 已在程式 commit `c9cc7ce` 通過：macOS 與 Ubuntu 各執行全部 65 項 fixtures，雙語 strict docs 與獨立 gitleaks job 也通過。這些仍是桌面檢查，不代表 Android runtime 驗收。

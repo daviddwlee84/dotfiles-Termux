@@ -120,4 +120,4 @@ report that no devices were connected.
 
 The public repository has been created at
 [github.com/daviddwlee84/dotfiles-Termux](https://github.com/daviddwlee84/dotfiles-Termux).
-GitHub Actions CI is pending; no remote CI success is claimed in this record.
+[GitHub Actions run 34262880520](https://github.com/daviddwlee84/dotfiles-Termux/actions/runs/34262880520) passed on code commit `c9cc7ce`: macOS and Ubuntu each ran all 65 fixtures, strict bilingual docs passed, and the separate gitleaks job passed. These remain desktop checks, not Android runtime acceptance.
