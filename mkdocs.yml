@@ -1,0 +1,34 @@
+site_name: dotfiles-Termux
+site_description: Native Android Termux dotfiles and ADB setup helpers
+site_url: https://daviddwlee84.github.io/dotfiles-Termux/
+repo_url: https://github.com/daviddwlee84/dotfiles-Termux
+theme:
+  name: material
+plugins:
+  - search
+  - i18n:
+      docs_structure: suffix
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+        - locale: zh-TW
+          name: 繁體中文
+          build: true
+          nav_translations:
+            Home: 首頁
+            Setup: 安裝與管理
+            SSH and boot: SSH 與開機啟動
+            Shell and configuration: Shell 與設定
+            Tools and compatibility: 工具與相容性
+            Optional Linux userspace: 選用 Linux 使用者環境
+            Verification: 驗證與維護
+nav:
+  - Home: index.md
+  - Setup: setup.md
+  - SSH and boot: ssh.md
+  - Shell and configuration: shell.md
+  - Tools and compatibility: tools.md
+  - Optional Linux userspace: proot.md
+  - Verification: verification.md

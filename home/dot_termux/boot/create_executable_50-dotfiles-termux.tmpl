@@ -1,0 +1,3 @@
+#!{{ .termuxPrefix }}/bin/bash
+# Other Boot scripts are preserved. This helper checks the current chezmoi choices.
+exec '{{ .termuxPrefix | replace "'" "'\\''" }}/bin/bash' '{{ .chezmoi.workingTree | replace "'" "'\\''" }}/scripts/ssh.sh' boot

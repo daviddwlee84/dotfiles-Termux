@@ -1,0 +1,49 @@
+{{- $prefix := env "PREFIX" | default "/data/data/com.termux/files/usr" -}}
+{{- $guard := output (joinPath $prefix "bin" "bash") (joinPath .chezmoi.workingTree "scripts" "guard.sh") -}}
+{{- $config := dict -}}
+{{- if stat .chezmoi.configFile -}}
+{{- $config = fromToml (include .chezmoi.configFile) -}}
+{{- end -}}
+{{- $data := get $config "data" | default dict -}}
+{{- $ssh := true -}}
+{{- $mode := "lan" -}}
+{{- $port := "8022" -}}
+{{- $boot := true -}}
+{{- $wake := false -}}
+{{- $agents := true -}}
+{{- $tools := "" -}}
+{{- if eq (env "DOTFILES_INIT_FROM_BOOTSTRAP") "true" -}}
+{{- $ssh = eq (env "DOTFILES_INIT_SSH") "true" -}}
+{{- $mode = env "DOTFILES_INIT_MODE" -}}
+{{- $port = env "DOTFILES_INIT_PORT" -}}
+{{- $boot = eq (env "DOTFILES_INIT_BOOT") "true" -}}
+{{- $wake = eq (env "DOTFILES_INIT_WAKE") "true" -}}
+{{- $agents = eq (env "DOTFILES_INIT_AGENTS") "true" -}}
+{{- $tools = env "DOTFILES_INIT_TOOLS" -}}
+{{- else -}}
+{{- $ssh = promptBoolOnce . "installSshServer" "Install SSH server" true -}}
+{{- $mode = promptChoiceOnce . "sshMode" "SSH access mode" (list "lan" "adb") "lan" -}}
+{{- $port = promptStringOnce . "sshPort" "SSH port" "8022" -}}
+{{- $boot = promptBoolOnce . "installTermuxBoot" "Start SSH with Termux Boot" true -}}
+{{- $wake = promptBoolOnce . "termuxWakeLock" "Acquire wake lock at boot" false -}}
+{{- $agents = promptBoolOnce . "installCodingAgents" "Install coding agents (Pi)" true -}}
+{{- $tools = promptStringOnce . "optionalTools" "Optional tools (herdr,codex or empty)" "" -}}
+{{- end -}}
+{{- $validated := output (joinPath $prefix "bin" "bash") (joinPath .chezmoi.workingTree "scripts" "guard.sh") (toString $ssh) $mode $port (toString $boot) (toString $wake) (toString $agents) $tools -}}
+{{- $_ := set $data "installSshServer" $ssh -}}
+{{- $_ = set $data "sshMode" $mode -}}
+{{- $_ = set $data "sshPort" $port -}}
+{{- $_ = set $data "installTermuxBoot" $boot -}}
+{{- $_ = set $data "termuxWakeLock" $wake -}}
+{{- $_ = set $data "installCodingAgents" $agents -}}
+{{- $_ = set $data "optionalTools" $tools -}}
+{{- $_ = set $data "termuxPrefix" $prefix -}}
+{{- $_ = set $config "data" $data -}}
+{{- $_ = set $config "sourceDir" .chezmoi.workingTree -}}
+{{- if not (hasKey $config "scriptTempDir") -}}
+{{- $_ = set $config "scriptTempDir" (joinPath $prefix "tmp") -}}
+{{- end -}}
+{{- if not (hasKey $config "update") -}}
+{{- $_ = set $config "update" (dict "command" (joinPath $prefix "bin" "bash") "args" (list (joinPath .chezmoi.workingTree "scripts" "manage.sh") "pull")) -}}
+{{- end -}}
+{{ $config | toToml }}

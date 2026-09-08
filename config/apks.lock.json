@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "source": "https://f-droid.org/repo/",
+  "verified_at": "2026-09-09",
+  "apks": {
+    "termux": {
+      "package": "com.termux",
+      "version": "0.118.3",
+      "version_code": 1002,
+      "url": "https://f-droid.org/repo/com.termux_1002.apk",
+      "sha256": "e6265a57eb5ca363808488e3b01955958bed93bc0c8a0d281849b363b11027ec",
+      "size": 113880067,
+      "signer_sha256": "228fb2cfe90831c1499ec3ccaf61e96e8e1ce70766b9474672ce427334d41c42",
+      "activity": "com.termux/.app.TermuxActivity"
+    },
+    "boot": {
+      "package": "com.termux.boot",
+      "version": "0.8.1",
+      "version_code": 1000,
+      "url": "https://f-droid.org/repo/com.termux.boot_1000.apk",
+      "sha256": "6f7cf9b94f539d3efd4af3544ff819947b49395275d8cfa7e5f80de14f3d9cf8",
+      "size": 26000,
+      "signer_sha256": "228fb2cfe90831c1499ec3ccaf61e96e8e1ce70766b9474672ce427334d41c42",
+      "activity": "com.termux.boot/.BootActivity"
+    },
+    "api": {
+      "package": "com.termux.api",
+      "version": "0.53.0",
+      "version_code": 1002,
+      "url": "https://f-droid.org/repo/com.termux.api_1002.apk",
+      "sha256": "4497dbbf81906df52e59ed387a5223d225aa0de3aca817cc557a621e4dadda44",
+      "size": 3956196,
+      "signer_sha256": "228fb2cfe90831c1499ec3ccaf61e96e8e1ce70766b9474672ce427334d41c42",
+      "activity": "com.termux.api/.activities.TermuxApiMainActivity"
+    },
+    "fdroid": {
+      "package": "org.fdroid.fdroid",
+      "version": "1.23.2",
+      "version_code": 1023052,
+      "url": "https://f-droid.org/repo/org.fdroid.fdroid_1023052.apk",
+      "sha256": "985f5181d48bb6bafd54083a048b391271e0ab28385881cc41294fb01a222762",
+      "size": 12426276,
+      "signer_sha256": "43238d512c1e5eb2d6569f4a3afbf5523418b82e0a3ed1552770abb9a9c9ccab",
+      "activity": "org.fdroid.fdroid/.views.main.MainActivity"
+    }
+  }
+}

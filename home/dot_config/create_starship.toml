@@ -1,0 +1,20 @@
+format = "$username$hostname $directory$character"
+add_newline = false
+scan_timeout = 20
+command_timeout = 300
+
+[username]
+show_always = true
+format = "[$user](bold cyan)"
+
+[hostname]
+ssh_only = false
+format = "[@$hostname](bold cyan)"
+
+[directory]
+truncation_length = 3
+read_only = ""
+
+[character]
+success_symbol = "[>](bold green)"
+error_symbol = "[>](bold red)"

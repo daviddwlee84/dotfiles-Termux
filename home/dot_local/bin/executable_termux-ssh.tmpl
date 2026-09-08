@@ -1,0 +1,2 @@
+#!{{ .termuxPrefix }}/bin/bash
+exec '{{ .termuxPrefix | replace "'" "'\\''" }}/bin/bash' '{{ .chezmoi.workingTree | replace "'" "'\\''" }}/scripts/ssh.sh' "$@"

@@ -1,0 +1,7 @@
+{{ if not (contains "herdr" .optionalTools) }}
+.config/herdr
+.config/herdr/**
+{{ end }}
+{{ if not .installTermuxBoot }}
+.termux/boot/50-dotfiles-termux
+{{ end }}

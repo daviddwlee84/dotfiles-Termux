@@ -1,0 +1,46 @@
+name: Checks
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  fixtures:
+    name: Desktop fixtures (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Install validation tools on Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+          curl -fL --retry 3 https://github.com/twpayne/chezmoi/releases/download/v2.72.1/chezmoi_2.72.1_linux-musl_amd64.tar.gz -o "$RUNNER_TEMP/chezmoi.tar.gz"
+          test "$(wc -c < "$RUNNER_TEMP/chezmoi.tar.gz")" -eq 15709577
+          printf '%s  %s\n' b961e2972d6fcd1002f9b986d4a61dc5da288e96aab226434fd5b20a7de80cf9 "$RUNNER_TEMP/chezmoi.tar.gz" | sha256sum -c -
+          mkdir -p "$HOME/.local/bin"
+          tar -xzf "$RUNNER_TEMP/chezmoi.tar.gz" -C "$HOME/.local/bin" chezmoi
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Install validation tools on macOS
+        if: runner.os == 'macOS'
+        run: brew install shellcheck chezmoi
+      - name: Lint and validate metadata
+        run: bash scripts/lint.sh
+      - name: Isolated host and target fixtures
+        run: uv run --no-project --python 3.12 python -m unittest discover -s tests -v
+      - name: Build bilingual documentation
+        run: uv run --no-project --with 'mkdocs<2' --with mkdocs-material --with mkdocs-static-i18n mkdocs build --strict
+      - name: Detect private keys
+        run: uvx pre-commit run detect-private-key --all-files
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

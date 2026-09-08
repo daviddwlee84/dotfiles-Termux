@@ -1,0 +1,5 @@
+#!{{ .termuxPrefix }}/bin/bash
+set -euo pipefail
+exec '{{ .termuxPrefix | replace "'" "'\\''" }}/bin/bash' '{{ .chezmoi.workingTree | replace "'" "'\\''" }}/scripts/guard.sh' \
+    '{{ .installSshServer }}' '{{ .sshMode | replace "'" "'\\''" }}' '{{ .sshPort | replace "'" "'\\''" }}' \
+    '{{ .installTermuxBoot }}' '{{ .termuxWakeLock }}' '{{ .installCodingAgents }}' '{{ .optionalTools | replace "'" "'\\''" }}'

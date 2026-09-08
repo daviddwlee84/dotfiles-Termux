@@ -1,0 +1,3 @@
+#!{{ .termuxPrefix }}/bin/bash
+set -euo pipefail
+exec '{{ .termuxPrefix | replace "'" "'\\''" }}/bin/bash' '{{ .chezmoi.workingTree | replace "'" "'\\''" }}/scripts/ssh.sh' configure

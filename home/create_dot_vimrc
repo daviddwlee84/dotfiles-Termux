@@ -1,0 +1,6 @@
+" Create-once native Vim defaults; local edits remain yours.
+set nocompatible
+set number
+set backspace=indent,eol,start
+syntax on
+filetype plugin indent on
