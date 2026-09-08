@@ -116,7 +116,7 @@ bash bootstrap.sh setup --authorized-key-file "$HOME/host.pub"
 | `just apply` / `bash bootstrap.sh apply` | 套用設定，不升級套件 |
 | `bash bootstrap.sh update` | Git source 僅 fast-forward，再套用設定 |
 | `just packages` | 完整同步 Termux 套件，再安裝已選工具 |
-| `just upgrade` | 完整同步套件／工具；source 更新另外執行 |
+| `just upgrade` | 完整同步原生套件；既有選用工具執行檔保持原樣 |
 | `bash bootstrap.sh setup` | 首次安裝，或明確重跑完整 setup |
 | `bash bootstrap.sh doctor` | 查看裝置端狀態 |
 

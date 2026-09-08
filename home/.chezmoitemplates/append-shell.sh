@@ -9,7 +9,9 @@ if ! grep -qF '# >>> dotfiles-termux >>>' "$candidate"; then
 # >>> dotfiles-termux >>>
 EOF
     if [[ ${DOTFILES_MODIFY_BASHRC:-false} == true ]]; then
-        printf '%s\n' 'DOTFILES_TERMUX_BASHRC_SOURCED=1'
+        cat <<'EOF'
+[[ -z ${DOTFILES_TERMUX_LOGIN_FORWARDING:-} ]] || DOTFILES_TERMUX_LOGIN_BASHRC_SEEN=1
+EOF
     fi
     cat <<'EOF'
 [[ ! -r "$HOME/.config/dotfiles-termux/shell.bash" ]] || source "$HOME/.config/dotfiles-termux/shell.bash"

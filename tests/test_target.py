@@ -6,13 +6,61 @@ from pathlib import Path
 import shutil
 import socket
 import subprocess
+import sys
 import tempfile
+import time
 import unittest
 
 
 REPO = Path(__file__).resolve().parents[1]
 BASH = shutil.which("bash")
 CHEZMOI = shutil.which("chezmoi")
+
+# The native target has coreutils. Host fixtures must not depend on a macOS
+# runner also having GNU timeout installed. This wrapper runs the actual child
+# command, preserves argv/status, and kills its isolated process group on expiry.
+TIMEOUT_FIXTURE = r'''
+import os
+import signal
+import subprocess
+import sys
+
+args = sys.argv[1:]
+grace = 0.2
+try:
+    if args and args[0].startswith("--kill-after="):
+        grace = float(args.pop(0).split("=", 1)[1])
+    deadline = float(args.pop(0))
+    if deadline <= 0 or grace < 0 or not args:
+        raise ValueError("invalid timeout arguments")
+except (IndexError, ValueError):
+    sys.exit(125)
+try:
+    child = subprocess.Popen(args, start_new_session=True)
+except FileNotFoundError:
+    sys.exit(127)
+except PermissionError:
+    sys.exit(126)
+try:
+    result = child.wait(timeout=deadline)
+except subprocess.TimeoutExpired:
+    try:
+        os.killpg(child.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        pass
+    try:
+        child.wait(timeout=grace)
+    except subprocess.TimeoutExpired:
+        pass
+    # Also clean up a surviving grandchild after its parent exits on TERM.
+    try:
+        os.killpg(child.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
+    child.wait()
+    sys.exit(124)
+sys.exit(128 - result if result < 0 else result)
+'''
 
 
 @unittest.skipUnless(BASH and CHEZMOI, "Bash and chezmoi are required")
@@ -30,6 +78,9 @@ class TargetTests(unittest.TestCase):
         (self.root / ".fixture").touch()
         (self.bin / "bash").symlink_to(BASH)
         (self.bin / "chezmoi").symlink_to(CHEZMOI)
+        timeout = self.bin / "timeout"
+        timeout.write_text(f"#!{sys.executable}\n" + TIMEOUT_FIXTURE)
+        timeout.chmod(0o755)
         self.env = os.environ.copy()
         for name in list(self.env):
             if name.startswith(("CHEZMOI_", "DOTFILES_INIT_", "GIT_", "XDG_")):
@@ -114,6 +165,19 @@ class TargetTests(unittest.TestCase):
         self.bootstrap("--ssh-port", "22", expected=1)
         self.bootstrap("--with", "unknown", expected=1)
         self.assertFalse((self.root / "packages").exists())
+
+    def test_fixture_timeout_preserves_argv_status_and_enforces_deadline(self):
+        timeout = str(self.bin / "timeout")
+        output = self.run_command([timeout, "2", sys.executable, "-c",
+                                   "import sys; print(sys.argv[1])", "two words; literal"])
+        self.assertEqual(output.strip(), "two words; literal")
+        self.run_command([timeout, "2", sys.executable, "-c", "raise SystemExit(37)"], expected=37)
+        self.run_command([timeout, "invalid", sys.executable], expected=125)
+        started = time.monotonic()
+        self.run_command([timeout, "--kill-after=0.1", "0.1", sys.executable, "-c",
+                          "import signal,time; signal.signal(signal.SIGTERM, signal.SIG_IGN); time.sleep(30)"],
+                         expected=124)
+        self.assertLess(time.monotonic() - started, 3)
 
     def test_full_package_sync_precedes_install_and_missing_key_is_pending(self):
         output = self.configure()
@@ -261,6 +325,9 @@ class TargetTests(unittest.TestCase):
         self.assertEqual(set(payload), {"status", "user", "ssh_port", "host_key"})
 
     def test_foreign_listener_is_preserved_when_authorizing_a_key(self):
+        # Match a macOS runner without Homebrew coreutils in PATH; the fixture
+        # timeout must perform the real connection probe itself.
+        self.env["PATH"] = str(self.bin) + os.pathsep + os.defpath
         key = self.root / "host-key"
         subprocess.run([self.env["REAL_SSH_KEYGEN"], "-q", "-t", "ed25519", "-N", "", "-f", str(key)], check=True)
         with socket.socket() as listener:
@@ -306,10 +373,14 @@ class TargetTests(unittest.TestCase):
         command = ('fixture_login_alias; '
                    'printf "values:%s:%s:%s:%s:%s\\n" "$FROM_PROFILE" "$FROM_RC" '
                    '"$PROFILE_RUNS" "$RC_RUNS" "$MANAGED_RUNS"; '
+                   'source "$HOME/.bashrc"; fixture_login_alias; '
+                   'printf "resourced:%s:%s:%s:%s\\n" "$RC_RUNS" "$MANAGED_RUNS" '
+                   '"${DOTFILES_TERMUX_LOGIN_FORWARDING:-unset}" "${DOTFILES_TERMUX_LOGIN_BASHRC_SEEN:-unset}"; '
                    'export -p | grep -q DOTFILES_TERMUX_ && exit 9; :')
         output = self.run_command([BASH, "--login", "-i", "-c", command], env=env)
         self.assertIn("alias-retained", output)
         self.assertIn("values:profile-value:rc-value:1:1:1", output)
+        self.assertIn("resourced:2:1:unset:unset", output)
         # Bash's .bash_login precedence still applies on later fresh logins.
         (self.home / ".bash_login").write_text('FROM_LOGIN=login-value\n')
         command = ('fixture_login_alias; printf "precedence:%s:%s:%s:%s\\n" '

@@ -93,8 +93,8 @@ bash scripts/todo-kanban.sh --validate-only TODO.md
 
 ## 目前驗證紀錄 — 2026-09-09
 
-macOS maintainer 主機的各測試套件共 64 項 fixture tests 通過（host 35、target
-18、optional tools 11）；umbrella 的 13 項 orchestration tests 也通過。
+macOS maintainer 主機的各測試套件共 65 項 fixture tests 通過（host 35、target
+19、optional tools 11）；umbrella 的 13 項 orchestration tests 也通過。
 Lint、harness validation 與 English/zh-TW strict MkDocs build 通過。
 這些是桌面驗證結果，不是 Android runtime 測試。
 

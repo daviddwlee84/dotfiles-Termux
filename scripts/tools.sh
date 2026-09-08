@@ -114,7 +114,7 @@ tool_probe_herdr() (
     unset HERDR_SESSION HERDR_ENV HERDR_PANE_ID HERDR_CLIENT_SOCKET_PATH BASH_ENV ENV
     cd "$temp/home"
     printf 'onboarding = false\n[terminal]\ndefault_shell = "%s"\nshell_mode = "non_login"\n' "$PREFIX/bin/bash" >"$HERDR_CONFIG_PATH"
-    # shellcheck disable=SC2329 # Invoked by EXIT trap.
+    # shellcheck disable=SC2329,SC2317 # Invoked by EXIT trap (diagnostic varies by version).
     cleanup_herdr_probe() {
         timeout --kill-after=1 4 "$tool" server stop >/dev/null 2>&1 || true
         if [[ -n $server_pid ]]; then kill -TERM "$server_pid" 2>/dev/null || true; wait "$server_pid" 2>/dev/null || true; fi

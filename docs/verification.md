@@ -105,8 +105,8 @@ pairs and both navigation entries in `mkdocs.yml`.
 
 ## Current verification record — 2026-09-09
 
-On the macOS maintainer host, 64 fixture tests passed across the suites
-(35 host, 18 target, 11 optional-tool tests); the umbrella's 13 orchestration
+On the macOS maintainer host, 65 fixture tests passed across the suites
+(35 host, 19 target, 11 optional-tool tests); the umbrella's 13 orchestration
 tests also passed. Lint, harness validation and the strict English/zh-TW
 MkDocs build passed. These are desktop results, not Android runtime tests.
 
