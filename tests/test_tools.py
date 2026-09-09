@@ -155,7 +155,7 @@ class ToolTests(unittest.TestCase):
         result = self.run_tool("probe", "codex")
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("could not execute", result.stderr)
-        self.assertEqual(list((self.prefix / "tmp").iterdir()), [])
+        self.assert_codex_probe_clean()
 
     def test_codex_probe_rejects_command_runner_without_write_enforcement(self):
         # The fake runner deliberately provides no sandbox. The negative gate
@@ -164,4 +164,29 @@ class ToolTests(unittest.TestCase):
         result = self.run_tool("probe", "codex")
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("write-denial check failed", result.stderr)
+        self.assert_codex_probe_clean()
+
+    def assert_codex_probe_clean(self):
+        probes = self.home / ".local/state/dotfiles-termux/probes"
+        self.assertTrue(probes.is_dir())
+        self.assertEqual(list(probes.iterdir()), [])
         self.assertEqual(list((self.prefix / "tmp").iterdir()), [])
+
+    def test_codex_probe_uses_private_state_and_preserves_user_configuration(self):
+        user_codex = self.home / ".codex"
+        user_codex.mkdir()
+        user_config = user_codex / "config.toml"
+        original = '# existing user-owned configuration\nmodel = "fixture-model"\n'
+        user_config.write_text(original)
+        self.script("codex", 'printf "%s\\n" "$CODEX_HOME" > "$DOTFILES_TEST_ROOT/observed-codex-home"\n'
+                    'printf "probe-local state\\n" > "$CODEX_HOME/config.toml"\n'
+                    'printf "sandbox unavailable\\n" >&2\nexit 1\n')
+        result = self.run_tool("probe", "codex", env=dict(self.env, CODEX_HOME=str(user_codex)))
+        self.assertNotEqual(result.returncode, 0)
+        observed = Path((self.root / "observed-codex-home").read_text().strip())
+        self.assertTrue(observed.is_relative_to(self.home / ".local/state/dotfiles-termux/probes"))
+        self.assertTrue(observed.parent.name.startswith("codex."))
+        self.assertEqual(observed.name, "config")
+        self.assertFalse(observed.exists())
+        self.assertEqual(user_config.read_text(), original)
+        self.assert_codex_probe_clean()

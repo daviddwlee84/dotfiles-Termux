@@ -2,4 +2,4 @@
 # Official artifacts inspected 2026-09-09. Linux static assets are experimental on Android.
 pi|any|0.85.1|https://registry.npmjs.org/@earendil-works/pi-coding-agent/-/pi-coding-agent-0.85.1.tgz|1f498729649bdce647d1160993b4d92bf3c614cc819213bee2f91dd34f2a7af4|npm|-|6986356
 herdr|aarch64|v0.9.0|https://github.com/herdrdev/herdr/releases/download/v0.9.0/herdr-linux-aarch64|9c8db20fb7e7427b138d5367113f1621ffd319f2f65d6f009e2594029115f0d2|raw|-|22697240
-codex|aarch64|rust-v0.153.4|https://github.com/openai/codex/releases/download/rust-v0.153.4/codex-aarch64-unknown-linux-musl.tar.gz|5cda6182bd94c3a30f2eb63a495489ebf7f691fddb14d70f48c6c1a5071b6cde|tar.gz|codex-aarch64-unknown-linux-musl|90899740
+codex|aarch64|rust-v0.153.4|https://github.com/openai/codex/releases/download/rust-v0.153.4/codex-package-aarch64-unknown-linux-musl.tar.gz|fc395cb043a1093ab0db34f44aba3199bfaa9ce640cd9be7fd588f44b0da64a4|tar.gz|bin/codex|117238842

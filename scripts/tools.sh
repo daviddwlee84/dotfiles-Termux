@@ -21,6 +21,10 @@ tool_record() {
 tool_install() (
     set -euo pipefail
     local tool=$1 arch row _name version url digest format member bytes destination temp
+    if [[ $tool == codex ]]; then
+        bash "$TOOLS_REPO/scripts/codex-package.sh" install
+        return
+    fi
     if command -v "$tool" >/dev/null 2>&1; then
         termux_say "$tool already installed; preserving $(command -v "$tool")"
         return 0
@@ -87,7 +91,10 @@ tool_probe_codex() (
     set -euo pipefail
     local tool temp
     tool=$(command -v codex) || { termux_die 'Codex is missing'; return 1; }
-    temp=$(mktemp -d "$PREFIX/tmp/dotfiles-codex.XXXXXX")
+    # Codex deliberately rejects helper aliases under the system temp directory.
+    # Isolate its config under our private state, without loading account state.
+    termux_safe_dir "$TERMUX_STATE/probes"
+    temp=$(mktemp -d "$TERMUX_STATE/probes/codex.XXXXXX")
     trap 'rm -rf "$temp"' EXIT
     mkdir -p "$temp/config" "$temp/project"
     cd "$temp/project"
@@ -110,7 +117,7 @@ tool_probe_codex() (
 
 tool_probe_herdr() (
     set -euo pipefail
-    local tool temp server_pid='' pane _attempt
+    local tool temp server_pid='' pane workspace _attempt
     tool=$(command -v herdr) || { termux_die 'Herdr is missing'; return 1; }
     # Short private path also avoids UNIX socket path-length limits on Android.
     temp=$(mktemp -d "$PREFIX/tmp/hp.XXXXXX")
@@ -118,7 +125,7 @@ tool_probe_herdr() (
     export HOME="$temp/home" XDG_CONFIG_HOME="$temp/home/.config" TMPDIR="$temp/tmp"
     export XDG_STATE_HOME="$temp/state" XDG_DATA_HOME="$temp/data" XDG_CACHE_HOME="$temp/cache" XDG_RUNTIME_DIR="$temp/runtime"
     export SHELL="$PREFIX/bin/bash" HERDR_CONFIG_PATH="$temp/config.toml" HERDR_SOCKET_PATH="$temp/api.sock"
-    unset HERDR_SESSION HERDR_ENV HERDR_PANE_ID HERDR_CLIENT_SOCKET_PATH BASH_ENV ENV
+    unset HERDR_SESSION HERDR_ENV HERDR_PANE_ID HERDR_CLIENT_SOCKET_PATH HERDR_STARTUP_CWD BASH_ENV ENV
     cd "$temp/home"
     printf 'onboarding = false\n[terminal]\ndefault_shell = "%s"\nshell_mode = "non_login"\n' "$PREFIX/bin/bash" >"$HERDR_CONFIG_PATH"
     # shellcheck disable=SC2329,SC2317 # Invoked by EXIT trap (diagnostic varies by version).
@@ -134,7 +141,17 @@ tool_probe_herdr() (
         if timeout --kill-after=1 2 "$tool" pane list >"$temp/panes.json" 2>/dev/null; then break; fi
         sleep 0.25
     done
-    pane=$(jq -er '.result.panes[0].pane_id' "$temp/panes.json") || { cat "$temp/server.log"; termux_die 'Herdr could not create a PTY'; return 1; }
+    # Fresh headless servers intentionally start with no workspaces or panes.
+    if ! timeout --kill-after=1 10 "$tool" workspace create --cwd "$temp/home" \
+        --label termux-probe --no-focus >"$temp/create.json" 2>"$temp/create.err"; then
+        cat "$temp/create.json" "$temp/create.err" "$temp/server.log"
+        termux_die 'Herdr workspace/PTY creation failed'; return 1
+    fi
+    pane=$(jq -er 'select(.result.type == "workspace_created") | .result.root_pane.pane_id | select(type == "string" and length > 0)' "$temp/create.json") || {
+        cat "$temp/create.json" "$temp/create.err" "$temp/server.log"
+        termux_die 'Herdr workspace result did not contain a pane'; return 1
+    }
+    workspace=$(jq -er '.result.workspace.workspace_id | select(type == "string" and length > 0)' "$temp/create.json") || return 1
     timeout --kill-after=1 5 "$tool" pane run "$pane" 'printf "termux-herdr-%s\n" "probe"' >/dev/null
     for _attempt in {1..20}; do
         timeout --kill-after=1 3 "$tool" pane read "$pane" --format text >"$temp/read.txt"
@@ -143,7 +160,7 @@ tool_probe_herdr() (
     done
     grep -q termux-herdr-probe "$temp/read.txt" || { termux_die 'Herdr shell command/output check failed'; return 1; }
     timeout --kill-after=1 5 "$tool" pane split "$pane" --direction right >/dev/null
-    timeout --kill-after=1 5 "$tool" pane list | jq -e '.result.panes | length >= 2' >/dev/null
+    timeout --kill-after=1 5 "$tool" pane list --workspace "$workspace" | jq -e '.result.panes | length >= 2' >/dev/null
     termux_say 'Herdr headless PTY/run/read/split probe passed; interactive SSH/resize/reconnect checks remain pending.'
 )
 

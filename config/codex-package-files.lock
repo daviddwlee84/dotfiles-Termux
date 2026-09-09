@@ -1,0 +1,9 @@
+# member|sha256|bytes|mode
+# Official rust-v0.153.4 codex-package-aarch64-unknown-linux-musl.tar.gz.
+# Full layout verified 2026-09-09; all files remain together under ~/.local/.
+bin/codex|4d76e542c222ea8c75861d8c4ade60a1a332a63255ce1c60bdaebf7c2a2869e6|222567456|0755
+bin/codex-code-mode-host|d677dedf8179ca28ceb869a2e0b60d3ffad3d26f6e7738f7617d34500128a369|63381656|0755
+codex-package.json|a3c985c334a13f6168900d9aa900d875797e4c7a8a6432768bd1d64740f53f54|206|0644
+codex-path/rg|e36d0eb52e70696bdf1781392722e05a21bb91d3b7b762ef5ec20e5df2ec687b|4506992|0755
+codex-resources/bwrap|c547cbdc762a70ed216789ffaa4c6c0e7d2beabe32245a498f8e365a9fc8dab4|529168|0755
+codex-resources/zsh/bin/zsh|7feeacd883e1dc749847936948c378653c80a69ec4a9542f0f126b411882c179|878056|0755
