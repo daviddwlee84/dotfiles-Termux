@@ -1,7 +1,9 @@
 bash
 ca-certificates
 coreutils
+which
 curl
+file
 git
 chezmoi
 just

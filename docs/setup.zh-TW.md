@@ -4,6 +4,36 @@
 目標是 ARM64。電腦端 helper 支援 macOS 與 Linux。Windows 使用者可以先採用
 下方的裝置端手動安裝流程。
 
+## 指令要在哪裡執行？
+
+完整 provisioning 與 SSH helper 都在公開的
+[dotfiles-Termux repository](https://github.com/daviddwlee84/dotfiles-Termux)，
+包含 `justfile`、`scripts/host.py` 與 `scripts/host-deps.sh`。可以單獨 clone
+使用，不需要取得 umbrella repository。`dotfiles-all` 的 recipes 只是把參數
+轉交給這些公開 helpers。
+
+以下都是在 **macOS/Linux 電腦端**執行的指令：
+
+| 工作 | 在 `dotfiles-all/` | 在公開 `dotfiles-Termux/` clone | 不用 just，在公開 clone 內 |
+| --- | --- | --- | --- |
+| 主機依賴 | `just termux-host-deps` | `just host-deps` | `sh scripts/host-deps.sh` |
+| 列出裝置 | `just termux-devices` | `just devices` | `uv run --script scripts/host.py devices` |
+| 設定 Android | `just termux-setup` | `just setup` | `uv run --script scripts/host.py setup` |
+| 連線 Android | `just termux-ssh` | `just ssh` | `uv run --script scripts/host.py ssh` |
+| 主機／裝置健康檢查 | `just termux-doctor` | `just doctor` | `uv run --script scripts/host.py doctor` |
+| 維護檢查 | `just check-termux` | `just check` | 參考[驗證指南](verification.md) |
+
+standalone justfile 沒有定義 umbrella 的 `termux-*` recipe 名稱。
+在 **Android 的 Termux 內**，從裝置 repository working tree 執行
+`bash bootstrap.sh setup` 完成首次 target setup；裝置健康檢查則用
+`just target-doctor` 或 `bash bootstrap.sh doctor`。即使在 Android 打開同一個
+repository，standalone 的 `just setup`、`just ssh`、`just doctor` 仍是電腦端
+recipes。
+
+已安裝的 `termux-ssh`（**前面不加 just**）是另一個裝置端 helper：
+`termux-ssh status|start|stop` 管理平板自己的 sshd。私鑰與配對狀態留在電腦，
+但 helper 程式本身是公開的。
+
 ## 從電腦透過 ADB 安裝
 
 1. 在電腦 clone `https://github.com/daviddwlee84/dotfiles-Termux.git`。
@@ -59,9 +89,8 @@ uv run --script scripts/host.py --serial SERIAL setup --manual
 uv run --script scripts/host.py --serial SERIAL ssh -- uname -a
 ```
 
-在 umbrella `dotfiles-all` 對應的指令是 `just termux-host-deps`、
-`termux-devices`、`termux-setup`、`termux-ssh`、`termux-doctor` 與
-`check-termux`。原本的 `just apply` 仍然套用電腦原生 Unix/Windows 設定。
+切換 umbrella 與 standalone clone 時，依上方的指令位置表選擇名稱。
+umbrella 原本的 `just apply` 仍然套用電腦原生 Unix/Windows 設定。
 
 ## APK 來源與簽章
 
@@ -106,13 +135,56 @@ bash bootstrap.sh setup --authorized-key-file "$HOME/host.pub"
 只複製 `.pub` 檔案，不要將私鑰傳到 Android，也不要 commit 配對資料。
 詳見[手動 LAN 存取](ssh.md#manual-lan-access)。
 
+## HOME、PREFIX 與 chezmoi source
+
+此 repo 支援的原生 Termux app 路徑中，`~` 就是 `$HOME`：
+
+| 層級 | 位置 | 用途 |
+| --- | --- | --- |
+| 裝置 HOME | `/data/data/com.termux/files/home` | 個人檔案與 dotfile 部署目的地 |
+| 套件 PREFIX | `/data/data/com.termux/files/usr` | 原生執行檔在 `$PREFIX/bin`，套件設定在 `$PREFIX/etc` |
+| Repository working tree | `$HOME/.local/share/dotfiles-Termux` | Git checkout、bootstrap、scripts、justfile 與 docs |
+| chezmoi 有效 source | `$HOME/.local/share/dotfiles-Termux/home` | 由 repository 的 `.chezmoiroot` 指定的 templates |
+| 預設 chezmoi 設定檔 | `$HOME/.config/chezmoi/chezmoi.toml` | 保存 source 位置與功能選擇 |
+
+repository 的 `home/` 是**來源模板目錄**，不是 Android 的 `$HOME`。
+`.chezmoiroot` 內容只有 `home` 這個字，因此 `chezmoi source-path` 與
+`.chezmoi.sourceDir` 指向 checkout 裡的 `home/`，`.chezmoi.workingTree`
+則指向 checkout 根目錄。
+
+使用 `.local/share/dotfiles-Termux` 而非 chezmoi 通常的
+`.local/share/chezmoi`，是本 bootstrap 的約定，不是 Termux 或 chezmoi 的
+強制要求。固定位置讓 bootstrap 與 SSH-resume helper 找得到 repository，
+也讓 scripts 和 templates 放在同一份 checkout。無需另外在預設 chezmoi
+位置建立第二份 clone；既有無關 chezmoi 狀態會保留，不會被默默搬移或覆蓋。
+
+setup 中的 `scripts/manage.sh` 以明確 source（working tree）與 destination
+（`$HOME`）執行 `chezmoi init`。`home/.chezmoi.toml.tmpl` 將設定檔的
+`sourceDir` 寫成 **working-tree 根目錄的絕對路徑**；chezmoi 再依 `.chezmoiroot`
+選定有效的 `home/` source。同時保存功能 data 與只允許 fast-forward 的更新
+helper。初始化後，在任意目前目錄執行一般 chezmoi 指令，都會找到保存的 source。
+可以在 Termux 檢視路徑：
+
+```sh
+printf 'HOME=%s\nPREFIX=%s\n' "$HOME" "$PREFIX"
+chezmoi source-path
+chezmoi execute-template '{{ .chezmoi.workingTree }}'
+```
+
+`bootstrap.sh` 是裝置首次安裝的入口。在既有 clone 中執行時，它會轉交給
+`scripts/manage.sh`；若收到的是獨立 bootstrap 檔案，則先取得固定位置的 clone。
+電腦 `setup` 透過已配對 SSH 傳送此入口；上方手動流程則 clone 同一個公開 repo
+後，在裝置本機執行。首次流程安裝套件並初始化 chezmoi；日常
+`chezmoi diff`、`chezmoi apply`、`chezmoi update` 都只處理設定。
+
 ## 設定與套件更新
 
 原生套件政策將經常進行的 dotfile 更新與完整套件同步分開：
 
 | Termux clone 內的操作 | 行為 |
 | --- | --- |
-| `just diff` | 預覽受管理設定 |
+| `chezmoi diff` | 預覽實際受管理檔案差異；init 後可在任意目錄執行 |
+| `just diff` | 預覽 bootstrap 設定／dry-run 選擇；此 recipe 不顯示檔案 diff |
 | `just apply` / `bash bootstrap.sh apply` | 套用設定，不升級套件 |
 | `bash bootstrap.sh update` | Git source 僅 fast-forward，再套用設定 |
 | `just packages` | 完整同步 Termux 套件，再安裝已選工具 |
@@ -133,8 +205,6 @@ bash bootstrap.sh setup --authorized-key-file "$HOME/host.pub"
 值已提供或採用預設值時可加上 `--non-interactive`。既有、無關的 chezmoi source
 會保留；遇到 source 衝突時應明確解決，不要刪除另一套設定。
 
-電腦 provisioning 使用的固定裝置 clone 路徑為
-`~/.local/share/dotfiles-Termux`；手動指南也採用相同位置。
 `~/.config/dotfiles-termux/settings` 由 chezmoi init data 渲染，不要直接編輯。
 若只調整保存設定、不同步套件，執行 `chezmoi edit-config`，修改對應 `[data]`
 值，再執行 `chezmoi apply`。
@@ -165,6 +235,16 @@ Termux 仍可使用。
 host `doctor` 即使無法選定裝置，也會報告已安裝的主機能力，並以非零狀態提供
 後續指示。對已配對且可連線的裝置，也會透過 SSH 執行原生 target doctor。
 裝置探索失敗不代表沒有連接裝置。
+
+## 找不到 which 或 file
+
+`which` 是[獨立的 Termux 套件](https://github.com/termux/termux-packages/blob/master/packages/which/build.sh)；安裝 `util-linux` 不會提供它。baseline 現在
+明確包含 `which` 與 `file`。只想查看指令位置時，不需要等 which 安裝，Bash
+本來就有 `command -v git` 與 `type -a git`。
+
+較舊的 checkout 先用 `chezmoi update` 更新 source，再到
+`$HOME/.local/share/dotfiles-Termux` 執行 `just packages`，完整同步原生套件並
+補上缺少的 baseline 指令。一般 chezmoi apply 刻意不安裝新加入的套件。
 
 ## 裝置端網路失敗
 

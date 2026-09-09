@@ -4,6 +4,37 @@ Use native Termux from F-Droid on Android 7 or newer; ARM64 is the first
 runtime target for this repository. The computer helper supports macOS and
 Linux. Windows users can follow the device-only instructions below.
 
+## Which command runs where?
+
+All provisioning and SSH helper code is in the public
+[dotfiles-Termux repository](https://github.com/daviddwlee84/dotfiles-Termux):
+its `justfile`, `scripts/host.py` and `scripts/host-deps.sh`. You can clone it
+standalone; access to the umbrella repository is not required. The
+`dotfiles-all` recipes only pass arguments to these public helpers.
+
+The following are **computer-side commands**, run on macOS/Linux:
+
+| Task | From `dotfiles-all/` | From the public `dotfiles-Termux/` clone | Without just, from that public clone |
+| --- | --- | --- | --- |
+| Host dependencies | `just termux-host-deps` | `just host-deps` | `sh scripts/host-deps.sh` |
+| List devices | `just termux-devices` | `just devices` | `uv run --script scripts/host.py devices` |
+| Provision Android | `just termux-setup` | `just setup` | `uv run --script scripts/host.py setup` |
+| Connect to Android | `just termux-ssh` | `just ssh` | `uv run --script scripts/host.py ssh` |
+| Host/device health | `just termux-doctor` | `just doctor` | `uv run --script scripts/host.py doctor` |
+| Maintainer checks | `just check-termux` | `just check` | See [verification](verification.md) |
+
+The umbrella-prefixed recipe names are not defined in the standalone
+justfile. Inside **Termux on Android**, use `bash bootstrap.sh setup` for
+initial target setup and `just target-doctor` or `bash bootstrap.sh doctor`
+for target health, from the device's repository working tree. Standalone
+`just setup`, `just ssh` and `just doctor` remain computer-side recipes even
+when you are looking at the same repository on Android.
+
+The installed `termux-ssh` command **without just** is a different target-side
+helper: `termux-ssh status|start|stop` manages the tablet's own sshd. Private
+pairing keys/state stay on the computer; the helper implementation itself
+is public.
+
 ## ADB setup from a computer
 
 1. Clone `https://github.com/daviddwlee84/dotfiles-Termux.git` on the computer.
@@ -66,10 +97,9 @@ uv run --script scripts/host.py --serial SERIAL setup --manual
 uv run --script scripts/host.py --serial SERIAL ssh -- uname -a
 ```
 
-The umbrella `dotfiles-all` equivalents are `just termux-host-deps`,
-`termux-devices`, `termux-setup`, `termux-ssh`, `termux-doctor`, and
-`check-termux`. Its ordinary `just apply` still targets the computer's native
-Unix/Windows configuration.
+Use the command-location table above when switching between the umbrella
+and standalone clone. The umbrella's ordinary `just apply` still targets
+the computer's native Unix/Windows configuration.
 
 ## APK source and signatures
 
@@ -119,6 +149,52 @@ bash bootstrap.sh setup --authorized-key-file "$HOME/host.pub"
 Only copy the `.pub` file. Never transfer a private key to Android or commit
 pairing material. See [manual SSH access](ssh.md#manual-lan-access).
 
+## HOME, PREFIX and the chezmoi source
+
+In this supported native Termux app layout, `~` means `$HOME`:
+
+| Layer | Location | Purpose |
+| --- | --- | --- |
+| Device HOME | `/data/data/com.termux/files/home` | Your files and the dotfile destination |
+| Package PREFIX | `/data/data/com.termux/files/usr` | Native package programs in `$PREFIX/bin`, package configuration in `$PREFIX/etc` |
+| Repository working tree | `$HOME/.local/share/dotfiles-Termux` | Git checkout, bootstrap, scripts, justfile and docs |
+| Effective chezmoi source | `$HOME/.local/share/dotfiles-Termux/home` | Templates selected by the repository's `.chezmoiroot` file |
+| Default chezmoi configuration | `$HOME/.config/chezmoi/chezmoi.toml` | Saved source location and feature choices |
+
+The repository's `home/` directory contains **source templates**; it is not
+Android's `$HOME`. The `.chezmoiroot` file contains the single word `home`.
+Consequently, `chezmoi source-path` and `.chezmoi.sourceDir` resolve to the
+checkout's `home/`, while `.chezmoi.workingTree` is the checkout root.
+
+Using `.local/share/dotfiles-Termux` rather than chezmoi's usual
+`.local/share/chezmoi` is this bootstrap's convention, not a Termux or chezmoi
+requirement. It gives the bootstrap and SSH-resume helper a known repository
+location and keeps scripts alongside the templates. No second clone in the
+usual chezmoi location is required. Existing unrelated chezmoi state is
+preserved rather than silently moved or overwritten.
+
+During setup, `scripts/manage.sh` runs `chezmoi init` with explicit source
+(the working tree) and destination (`$HOME`). `home/.chezmoi.toml.tmpl` saves
+`sourceDir` as the absolute **working-tree root** in the config; chezmoi then
+uses `.chezmoiroot` to select the effective `home/` source. This also records
+feature data and the fast-forward-only update helper. Once initialized,
+ordinary chezmoi commands find the saved source from any current directory.
+You can inspect the paths in Termux with:
+
+```sh
+printf 'HOME=%s\nPREFIX=%s\n' "$HOME" "$PREFIX"
+chezmoi source-path
+chezmoi execute-template '{{ .chezmoi.workingTree }}'
+```
+
+`bootstrap.sh` is the device's initial entry point. From an existing clone it
+delegates to `scripts/manage.sh`; when delivered as a standalone bootstrap
+file, it obtains the canonical clone first. Computer `setup` delivers this
+entry point over the paired SSH connection. The manual instructions above
+clone the same public repo and invoke it locally. This initial step installs
+packages and initializes chezmoi; daily `chezmoi diff`, `chezmoi apply` and
+`chezmoi update` handle configuration only.
+
 ## Configuration and package updates
 
 The native package policy deliberately separates frequent dotfile updates
@@ -126,7 +202,8 @@ from full package synchronization:
 
 | Operation in the Termux clone | Behavior |
 | --- | --- |
-| `just diff` | Preview managed configuration |
+| `chezmoi diff` | Preview actual managed-file differences; works from any directory after init |
+| `just diff` | Preview bootstrap settings/dry-run choices; this recipe does not show the file diff |
 | `just apply` / `bash bootstrap.sh apply` | Apply configuration without package upgrades |
 | `bash bootstrap.sh update` | Fast-forward the Git source, then apply configuration |
 | `just packages` | Fully synchronize Termux packages, then install selected tools |
@@ -152,11 +229,10 @@ Existing unrelated chezmoi sources are preserved; resolve a source conflict
 explicitly instead of deleting another configuration.
 
 
-Computer provisioning uses `~/.local/share/dotfiles-Termux` as the canonical
-device clone; the manual instructions use the same path. The rendered
-`~/.config/dotfiles-termux/settings` comes from chezmoi init data and should
-not be edited directly. For configuration-only changes to saved values, use
-`chezmoi edit-config`, edit the relevant `[data]` values, and run `chezmoi apply`.
+The rendered `~/.config/dotfiles-termux/settings` comes from chezmoi init
+data and should not be edited directly. For configuration-only changes to
+saved values, use `chezmoi edit-config`, edit the relevant `[data]` values,
+and run `chezmoi apply`.
 
 To review native init prompts, run `chezmoi init --prompt` and then
 `chezmoi apply`. Saved values:
@@ -186,6 +262,18 @@ Host `doctor` reports installed host capabilities even when it cannot select
 a device, returning nonzero with next steps. For a paired reachable device,
 it also runs the native target doctor over SSH. A failed device discovery
 is not evidence that no device is connected.
+
+## Missing command: which or file
+
+`which` is a [separate Termux package](https://github.com/termux/termux-packages/blob/master/packages/which/build.sh); having `util-linux` installed does not
+supply it. The baseline now explicitly requests both `which` and `file`.
+For a command-path check without `which`, Bash already provides
+`command -v git` and `type -a git`.
+
+After updating an older checkout with `chezmoi update`, run `just packages`
+from `$HOME/.local/share/dotfiles-Termux` to synchronize the full native
+package set and add missing baseline commands. An ordinary chezmoi apply
+intentionally does not install newly added packages.
 
 ## Device-side network failures
 
