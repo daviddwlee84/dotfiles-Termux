@@ -32,8 +32,17 @@ class ToolTests(unittest.TestCase):
                         PATH=str(self.prefix / "bin") + ":/usr/bin:/bin", FIXTURE_ARCH="aarch64")
         self.script("uname", 'printf "%s\\n" "$FIXTURE_ARCH"\n')
         self.script("timeout", 'case "$1" in --kill-after=*) shift;; esac\nshift\nexec "$@"\n')
-        # Termux ships GNU ln -T; use the OS atomic-link API on macOS fixtures.
-        self.script("ln", f"exec {shlex.quote(sys.executable)} -c 'import os,sys; os.link(sys.argv[-2],sys.argv[-1])' \"$@\"\n")
+        # Termux has GNU mv -nT; model its skip-success behavior on macOS too.
+        self.script("mv", f"exec {shlex.quote(sys.executable)} {shlex.quote(str(self.root / 'move.py'))} \"$@\"\n")
+        (self.root / "move.py").write_text(
+            "import os,sys,subprocess\n"
+            "if sys.argv[1]=='-nT':\n"
+            " src,dst=sys.argv[2:4]\n"
+            " race=os.environ.get('FIXTURE_RACE_DESTINATION')\n"
+            " if race=='file': open(dst,'w').write('existing user file')\n"
+            " elif race=='directory': os.mkdir(dst)\n"
+            " if not os.path.lexists(dst): os.rename(src,dst)\n"
+            "else: sys.exit(subprocess.call(['/bin/mv',*sys.argv[1:]]))\n")
         self.script("sha256sum", f"exec {shlex.quote(sys.executable)} {shlex.quote(str(self.root / 'checksum.py'))} \"$@\"\n")
         (self.root / "checksum.py").write_text(
             "import hashlib,sys\n"
@@ -126,6 +135,20 @@ class ToolTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         self.assertIn("missing (optional)", result.stdout)
         self.assertFalse((self.home / ".local").exists())
+
+    def test_concurrent_destination_file_is_preserved_and_not_reported_installed(self):
+        result = self.run_tool("install", "herdr", env=dict(self.env, FIXTURE_RACE_DESTINATION="file"))
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual((self.home / ".local/bin/herdr").read_text(), "existing user file")
+        self.assertFalse((self.home / ".local/state/dotfiles-termux/tools/herdr.status").exists())
+        self.assertEqual(list((self.home / ".local/bin").glob(".herdr.*")), [])
+
+    def test_concurrent_destination_directory_is_preserved(self):
+        result = self.run_tool("install", "herdr", env=dict(self.env, FIXTURE_RACE_DESTINATION="directory"))
+        self.assertNotEqual(result.returncode, 0)
+        self.assertTrue((self.home / ".local/bin/herdr").is_dir())
+        self.assertEqual(list((self.home / ".local/bin/herdr").iterdir()), [])
+        self.assertEqual(list((self.home / ".local/bin").glob(".herdr.*")), [])
 
     def test_codex_probe_rejects_sandbox_start_failure(self):
         self.script("codex", "printf 'sandbox unavailable\\n' >&2\nexit 1\n")

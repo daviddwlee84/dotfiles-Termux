@@ -389,6 +389,42 @@ class HostTests(unittest.TestCase):
             with self.assertRaisesRegex(host.SetupError, "host ADB startup/permissions separately"):
                 host.run(["adb", "devices"], timeout=1)
 
+    def test_foreground_requires_actual_focused_termux_window_on_primary_display(self):
+        adb = mock.Mock()
+        activity = "topResumedActivity=ActivityRecord{abcd u0 com.termux/.app.TermuxActivity t20}\n"
+        focused = "mCurrentFocus=Window{ef01 u0 com.termux/com.termux.app.TermuxActivity}\nmTopFocusedDisplayId=0\n"
+        adb.shell.side_effect = [subprocess.CompletedProcess([], 0, activity, ""),
+                                 subprocess.CompletedProcess([], 0, focused, "")]
+        self.assertTrue(host.foreground_termux(adb))
+        self.assertEqual(adb.shell.call_args.args, ("dumpsys", "window"))
+
+    def test_split_screen_resumed_termux_does_not_allow_input_to_other_window(self):
+        adb = mock.Mock()
+        activity = "mResumedActivity=ActivityRecord{abcd u0 com.termux/.app.TermuxActivity t20}\n"
+        focused = "mCurrentFocus=Window{ef01 u0 com.android.settings/.Settings}\nmTopFocusedDisplayId=0\n"
+        adb.shell.side_effect = [subprocess.CompletedProcess([], 0, activity, ""),
+                                 subprocess.CompletedProcess([], 0, focused, "")]
+        self.assertFalse(host.foreground_termux(adb))
+
+    def test_top_resumed_other_app_rejects_stale_resumed_termux(self):
+        adb = mock.Mock()
+        activity = ("topResumedActivity=ActivityRecord{aaaa u0 com.android.settings/.Settings t21}\n"
+                    "mResumedActivity=ActivityRecord{abcd u0 com.termux/.app.TermuxActivity t20}\n")
+        adb.shell.return_value = subprocess.CompletedProcess([], 0, activity, "")
+        self.assertFalse(host.foreground_termux(adb))
+        self.assertEqual(adb.shell.call_count, 1)
+
+    def test_unknown_focus_fields_and_secondary_display_fall_back_to_manual(self):
+        activity = "topResumedActivity=ActivityRecord{abcd u0 com.termux/.app.TermuxActivity t20}\n"
+        for windows in ("", "mCurrentFocus=null\nmTopFocusedDisplayId=0\n",
+                        "mCurrentFocus=Window{ef01 u0 com.termux/.app.TermuxActivity}\n",
+                        "mCurrentFocus=Window{ef01 u0 com.termux/.app.TermuxActivity}\nmTopFocusedDisplayId=2\n"):
+            with self.subTest(windows=windows):
+                adb = mock.Mock()
+                adb.shell.side_effect = [subprocess.CompletedProcess([], 0, activity, ""),
+                                         subprocess.CompletedProcess([], 0, windows, "")]
+                self.assertFalse(host.foreground_termux(adb))
+
 
 if __name__ == "__main__":
     unittest.main()

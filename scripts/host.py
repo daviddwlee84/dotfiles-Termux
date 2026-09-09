@@ -461,9 +461,22 @@ def terminal_node(tree):
 
 
 def foreground_termux(adb):
-    text = adb.shell("dumpsys", "activity", "activities", timeout=10).stdout
-    return any(re.search(r"(?:mResumedActivity|topResumedActivity).*\bcom\.termux/", line)
-               for line in text.splitlines())
+    activities = adb.shell("dumpsys", "activity", "activities", timeout=10).stdout
+    top = re.findall(r"^\s*topResumedActivity=(.*)$", activities, flags=re.MULTILINE)
+    resumed = top or re.findall(r"^\s*mResumedActivity[=:](.*)$", activities, flags=re.MULTILINE)
+    if not resumed or (top and any(not re.search(r"\bcom\.termux/", entry) for entry in top)):
+        return False
+    if not any(re.search(r"\bcom\.termux/", entry) for entry in resumed):
+        return False
+    # RESUMED does not mean input-focused in Android multi-window mode. Use
+    # the actual focused window, and restrict injection to the primary display.
+    # HyperOS omits these fields from `dumpsys window windows`, so request the
+    # full window dump. Unknown OEM formats fall back to manual paste.
+    windows = adb.shell("dumpsys", "window", timeout=10).stdout
+    focused = re.findall(r"^\s*mCurrentFocus=(.*)$", windows, flags=re.MULTILINE)
+    displays = re.findall(r"^\s*mTopFocusedDisplayId=(\d+)\s*$", windows, flags=re.MULTILINE)
+    return (len(focused) == 1 and bool(re.search(r"\bcom\.termux/", focused[0]))
+            and displays == ["0"])
 
 
 def termux_processes(adb):

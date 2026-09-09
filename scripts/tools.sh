@@ -68,9 +68,16 @@ tool_install() (
         local staged
         staged=$(mktemp "$HOME/.local/bin/.$tool.XXXXXX")
         cp "$temp/candidate" "$staged" && chmod 755 "$staged"
-        # link is atomic and refuses a destination created by a concurrent installer.
-        if ! ln -T "$staged" "$destination"; then rm -f "$staged"; return 1; fi
-        rm -f "$staged"
+        # Android app storage can deny hard links. GNU mv's no-clobber rename
+        # preserves a destination created concurrently, including symlinks/dirs.
+        if ! mv -nT "$staged" "$destination"; then rm -f "$staged"; return 1; fi
+        # mv -n reports success when it skips an existing target; don't report
+        # installation success unless our staged file was actually moved.
+        if [[ -e $staged ]]; then
+            rm -f "$staged"
+            termux_die "Concurrent destination preserved: $destination"
+            return 1
+        fi
     fi
     tool_record "$tool" "launch-only:$version; interactive,network,PTY,sandbox acceptance pending"
     termux_say "$tool installed ($version); run the explicit probe and device acceptance guide"
