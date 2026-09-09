@@ -13,6 +13,12 @@ Termux:Boot integration is enabled and wake-lock is off. Herdr and Codex are
 explicit native experiments (`--with herdr,codex`). Claude Code has a separate
 [PRoot guide](docs/proot.md).
 
+On the first Android 15 device, native SSH, tmux and Herdr session checks
+passed. The complete Codex package installed, but its normal sandbox failed
+on a denied kernel-file read. Pi rendered its login UI; authenticated model
+use and reboot/background behavior remain unverified. See the
+[dated device results](docs/verification.md#current-verification-record-2026-09-09).
+
 ## Set up a connected device
 
 On the computer, clone this repository and check/install the host dependencies:

@@ -11,6 +11,11 @@ Public-key SSH and Termux:Boot integration are enabled; wake-lock is off.
 Herdr and Codex are optional native experiments, with explicit
 [compatibility checks](tools.md).
 
+The first-device record confirms native SSH, tmux and Herdr session checks.
+Pi reached its login UI; Codex installed but its normal sandbox failed on a
+denied kernel-file read. Authentication, network-disruption recovery and
+reboot/background checks remain open. See the [dated results](verification.md).
+
 Termux uses Android's Linux kernel and its app-private filesystem. It is not
 a Debian VM, and the ordinary Android ADB shell is not a Termux session.
 Keep repositories and executables under Termux `$HOME`, not shared storage.

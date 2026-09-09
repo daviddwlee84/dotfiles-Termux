@@ -20,7 +20,7 @@ for the maintenance workflow that agents should follow.
 ## P1
 
 Likely next batch — items you'd reach for if you sat down to work today.
-- [ ] **[M] Validate Android runtime matrix** — Record the first ARM64 device smoke run, reconnect/Boot behavior and selected native-agent probes; desktop fixture results are not runtime evidence. → [research](backlog/android-runtime-matrix.md)
+- [ ] **[M] Validate Android runtime matrix** — Finish physical/network-disruption recovery, background/reboot/Boot and agent authentication after the partial ARM64 run; preserve the failed Codex sandbox gate. → [research](backlog/android-runtime-matrix.md)
 
 
 ## P2

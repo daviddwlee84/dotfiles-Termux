@@ -20,8 +20,11 @@ README and bilingual setup documentation before changing installation.
 - Host automation is macOS/Linux uv/Python. Select one authorized ADB serial.
   Never type into an arbitrary existing terminal/job. Confirm a new Termux
   shell or provide manual paste fallback. Clean up only owned ADB mappings.
-- Downloads use pinned versions, SHA-256 and size checks. Optional Herdr/Codex
-  static Linux artifacts are experimental; version output is not runtime proof.
+- Downloads use pinned versions, SHA-256 and size checks. Optional Herdr and
+  Codex Linux artifacts are experimental. Codex requires the complete official
+  package layout and companions, not only its main binary. Keep installation,
+  UI and normal-sandbox results separate; see
+  [the observed Codex sandbox failure](pitfalls/codex-overflowuid-permission-denied.md).
   Never weaken Android or agent sandbox protections to make a probe pass.
 - System-wide Android settings, battery exemption, storage permission and
   wake-lock are separate explicit choices, not implicit setup side effects.
@@ -48,16 +51,15 @@ session (signals: "maybe later", "nice to have", "if I'm interested",
 the priority + effort tag schema. Do **not** create new `ROADMAP.md` /
 `IDEAS.md` / `BACKLOG.md` files — `TODO.md` is the single index.
 
-> **These helpers (`add-todo.sh`, `sweep-inbox.sh`, `promote-todo.sh`,
-> `todo-kanban.sh`) are provided by the `project-knowledge-harness` skill and
-> are _not_ copied into this repo.** Invoke them through that skill — it knows
-> where its `scripts/` live, and they operate on this repo's `TODO.md` /
-> `backlog/`. If the skill isn't available, maintain `TODO.md` by hand using the
-> schema below; the format is simple and the validator is optional.
+> **The `project-knowledge-harness` helpers are vendored in this repo's
+> `scripts/`: `add-todo.sh`, `sweep-inbox.sh`, `promote-todo.sh` and
+> `todo-kanban.sh`.** Invoke them from the repository root with `bash scripts/…`.
+> They operate on this repo's `TODO.md` / `backlog/`; `add-todo.sh --backlog`
+> uses `backlog/.backlog-doc.md.template`. The external skill is not required
+> to run these local copies.
 
-The skill's `todo-kanban.sh` validates the format — run
-`todo-kanban.sh --validate-only TODO.md` after editing so syntax drift is
-caught immediately.
+Run `bash scripts/todo-kanban.sh --validate-only TODO.md` after editing so
+syntax drift is caught immediately.
 
 #### Three ways to add a TODO entry (preferred order)
 

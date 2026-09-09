@@ -43,8 +43,8 @@ bash scripts/tools.sh probe herdr
 bash scripts/tools.sh probe codex
 ```
 
-Herdr probe 建立私有暫存設定與獨立 headless server，檢查 PTY、指令輸入／輸出
-與分割，結束時只清理自己的 session。互動式 SSH rendering、resize 與 reconnect
+Herdr probe 建立私有暫存設定、獨立 headless server 與明確的 workspace，檢查
+PTY、指令輸入／輸出與分割，結束時只清理自己的 session。互動式 SSH rendering、resize 與 reconnect
 仍需手動驗收。
 
 Codex probe 使用獨立 `CODEX_HOME`，在原本的 read-only sandbox 執行無害指令，
@@ -93,17 +93,61 @@ bash scripts/todo-kanban.sh --validate-only TODO.md
 
 ## 目前驗證紀錄 — 2026-09-09
 
-macOS maintainer 主機的各測試套件共 65 項 fixture tests 通過（host 35、target
-19、optional tools 11）；umbrella 的 13 項 orchestration tests 也通過。
-Lint、harness validation 與 English/zh-TW strict MkDocs build 通過。
-這些是桌面驗證結果，不是 Android runtime 測試。
+已發布的基準證據：[GitHub Actions run 34298511347](https://github.com/daviddwlee84/dotfiles-Termux/actions/runs/34298511347)
+在 `ad710fe` 通過，包含 71 項 fixtures（host 39、target 19、optional tools
+13）、macOS/Ubuntu matrix、雙語 strict docs 與 gitleaks。先前本機驗證也通過
+umbrella 的 13 項 orchestration tests、lint 與 harness validation。這些證據
+對應其特定 revisions，不自動代表後續 commits；後續狀態請看
+[Checks workflow runs](https://github.com/daviddwlee84/dotfiles-Termux/actions/workflows/check.yml)。
+
+後續本機 `just check` 在 455 秒內執行 87 項 fixtures，最後有五項超過既有
+時限：三項 Codex package 測試超過 30 秒、兩項 Herdr 測試超過 10 秒。
+獨立 package 測試在 Python 3.12 與 3.14 都曾逾時，原因未確認，測試時限與
+assertions 維持原樣。`38cbc3c` 的 macOS CI job 在 61 秒內通過全部 87 項，
+Ubuntu 則停在已改寫為明確條件判斷的 ShellCheck 表達式。本機 lint、使用快取
+的 strict docs 與 secret checks 通過；本機完整測試沒有記為通過。
 
 四個固定 APK 的實際下載檔均通過大小／SHA-256 與 signer-certificate 檢查。
-`host-deps.sh --install` 已安裝 ADB 37.0.1。實際執行 `adb devices -l` 時，
-startup 在 120 秒後逾時；`adb version` 也停滯，probe 自己啟動的程序已終止。
-原因尚未確認。因此裝置是否可用、Android 執行、USB SSH 配對與 Boot 行為仍然
-未驗證；這不是「沒有連接裝置」的結論。
+主機依賴 installer 已安裝 ADB 37.0.1。較早的 startup probes 曾逾時，之後完成
+裝置授權後 ADB 已可正常通訊；先前逾時的原因沒有確認。
 
-公開 repository 已建立：
-[github.com/daviddwlee84/dotfiles-Termux](https://github.com/daviddwlee84/dotfiles-Termux)。
-[GitHub Actions run 34262880520](https://github.com/daviddwlee84/dotfiles-Termux/actions/runs/34262880520) 已在程式 commit `c9cc7ce` 通過：macOS 與 Ubuntu 各執行全部 65 項 fixtures，雙語 strict docs 與獨立 gitleaks job 也通過。這些仍是桌面檢查，不代表 Android runtime 驗收。
+測試裝置為 **Xiaomi Pad 6S Pro 12.4**，**ARM64**，執行
+**Android 15 / API 35 / HyperOS 2.0**。此處不保存 serial、Android user ID、
+位址、keys 或私有 runtime state。
+
+| 檢查 | 已確認結果 |
+| --- | --- |
+| APK 部署 | F-Droid／Termux 以相符 signer 完成安裝或更新；Termux:Boot 已安裝並開啟 |
+| 首次指令傳送 | 自動輸入至已驗證的新 Termux shell 成功 |
+| USB SSH 與接續 | 配對／嚴格 host-key pinning 成功；中斷 setup 透過已保存的 SSH 接續，無需重新輸入 |
+| LAN SSH | 直接連線 port 8022，使用相同 pinned host identity 通過 |
+| 完整 setup 重跑 | 在 `38cbc3c` 以 0 結束；重用 SSH、保留 apps、完整原生套件同步無變更、保留 Pi/Herdr，且完整 Codex package 無需下載即驗證成功 |
+| 設定 | 連續兩次 chezmoi apply 後，排除 scripts 的 status 都為空；`sshd -t` 與受管理 SSH 設定一致性通過 |
+| 一般 SSH login | Bash 與彩色 prompt 正常；`PROMPT_COMMAND=starship_precmd`、`ll='ls -al'`、`g='git'`；正常以 0 離開 |
+| 健康檢查 | host 與 target doctor 均以 0 結束；下方獨立的 Codex sandbox 檢查仍失敗 |
+| tmux | 原生獨立 PTY 輸入、分割兩個 panes 與 resize 通過 |
+| Herdr 0.9.0 | 明確建立 workspace 的 headless run/read/split 通過；互動式 SSH TUI 接受輸入，Ctrl+b q detach/reattach 後 marker 保留，測試在同一條 SSH 連線內 |
+| Pi 0.85.1 | 已安裝；未載入憑證的獨立 UI 正常顯示 `No models available` / `/login`；測試到期以 124 結束 |
+| Codex 0.153.4 | 已安裝完整官方 package，包含 code-mode host、rg、bwrap、zsh 與 manifest；`--version` 通過，原本的 sandbox 如下方錯誤失敗 |
+| Boot | app 已安裝並開啟一次；可執行 hook 通過 `bash -n`；未測試重開機／背景行為 |
+| 裝置網路 | 起初 GitHub TLS EOF／timeout；使用者自行啟用 VPN 後，GitHub 與 `git ls-remote` 成功 |
+
+Codex 的原始錯誤為：
+
+```text
+bwrap: Can't read /proc/sys/kernel/overflowuid: Permission denied
+```
+
+這證明正常 sandbox 啟動時的一次檔案讀取被拒絕，不能據此認定 user namespaces
+已停用。測試沒有使用 sandbox bypass。
+
+先前 hard-link 安裝失敗已改用 no-clobber rename 與明確的 skip 偵測處理；安裝
+結果與 runtime 驗收分開。Pi 的 124 是預定的測試 timeout，不是 app crash 或
+正常離開的證據，沒有執行 provider 登入或 model call。
+
+P1 仍保留：實體／網路中斷恢復、Herdr 互動 resize、關螢幕／背景行為、真正
+重開機後的 Boot，以及 agent 認證／模型／工具操作。Herdr 在同一 SSH 連線內
+的 detach/reattach 不代表網路斷線後也能保留。VPN 是使用者自行選擇，程式沒有
+修改全域網路設定，也沒有實作 offline bundle。
+
+Repository：[github.com/daviddwlee84/dotfiles-Termux](https://github.com/daviddwlee84/dotfiles-Termux)。

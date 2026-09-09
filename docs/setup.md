@@ -130,7 +130,7 @@ from full package synchronization:
 | `just apply` / `bash bootstrap.sh apply` | Apply configuration without package upgrades |
 | `bash bootstrap.sh update` | Fast-forward the Git source, then apply configuration |
 | `just packages` | Fully synchronize Termux packages, then install selected tools |
-| `just upgrade` | Fully synchronize packages/tools; source updates remain separate |
+| `just upgrade` | Fully synchronize native packages; existing optional binaries stay unchanged |
 | `bash bootstrap.sh setup` | Initial setup or an explicit repeat of full setup |
 | `bash bootstrap.sh doctor` | Inspect target status |
 
@@ -186,3 +186,16 @@ Host `doctor` reports installed host capabilities even when it cannot select
 a device, returning nonzero with next steps. For a paired reachable device,
 it also runs the native target doctor over SSH. A failed device discovery
 is not evidence that no device is connected.
+
+## Device-side network failures
+
+Host APK downloads and device-side package/GitHub access use different
+network paths. In the first device run, GitHub TLS requests failed with EOF
+or timeout while provisioning was already reachable over USB SSH. After the
+user enabled their own VPN on the device, GitHub access and `git ls-remote`
+succeeded and setup could resume.
+
+This observation does not establish the cause of the original TLS failure.
+The code did not change global VPN, proxy or DNS settings. Resolve device
+connectivity and repeat setup; it can reuse the saved SSH pairing. An
+offline bundle/install mode has not been implemented.

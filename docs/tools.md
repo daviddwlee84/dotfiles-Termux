@@ -1,8 +1,9 @@
 # Tools and compatibility
 
 The baseline stays in native Termux. Package availability and the compatibility
-evidence below were reviewed on **2026-09-09**; this date is not an Android
-device-test result.
+evidence below were reviewed on **2026-09-09**. The first Android device now
+has partial installation/launch results; see the [verification record](verification.md#current-verification-record-2026-09-09)
+for the exact completed and pending checks.
 
 | Tool | Installation path | Support level here |
 | --- | --- | --- |
@@ -10,7 +11,7 @@ device-test result.
 | Node.js LTS and npm | Official Termux packages | Runtime for Pi |
 | Pi | Maintained `@earendil-works/pi-coding-agent` npm package | Native default, controlled by `installCodingAgents` |
 | Herdr | Pinned upstream Linux static binary | Explicit native experiment |
-| Codex | Pinned upstream Linux-musl static binary | Explicit native experiment; sandbox is a separate gate |
+| Codex | Complete pinned official Linux-musl package and companions | Installed on the first device; normal sandbox blocked there |
 | Claude Code | Official Linux installer inside an optional PRoot distro | Guide only; no native installer in this repo |
 | Gemini CLI, OpenCode, OMP | Future compatibility work | No automatic installer |
 
@@ -32,10 +33,16 @@ npm install -g --ignore-scripts @earendil-works/pi-coding-agent
 The bootstrap pins and verifies Pi’s top-level npm tarball (version, size
 and SHA-256). npm resolves its transitive dependencies through the normal
 registry process; this is not a complete dependency lock. You do not need
-to repeat the upstream installation command after normal setup. Start `pi` in a project and complete its provider
-login yourself. No API token or provider login is copied from the computer.
+to repeat the upstream installation command after normal setup. Start `pi`
+in a project and complete its provider login yourself. No API token or provider login is copied from the computer.
 To leave Pi out of a subsequent explicit setup, use
 `--install-coding-agents false`; existing installations are not uninstalled.
+
+
+On the first device, an isolated Pi 0.85.1 UI launched without credentials
+and displayed `No models available` / `/login`. The timed smoke run ended
+with 124 at its deadline; no graceful exit, provider login or model call
+was verified. This is a UI launch result, not an authenticated agent session.
 
 Text clipboard integration requires both the Termux:API Android app and the
 `termux-api` command package. Image clipboard paste is not supported by Pi on
@@ -70,9 +77,14 @@ started; it is not proof that sessions, authentication or agent tools work.
 
 Read-only inspection found that the Herdr v0.9.0 ARM64 binary and Codex
 v0.153.4 ARM64-musl binary are self-contained ELF executables with no dynamic
-interpreter. That makes direct execution on Android's Linux kernel plausible.
-It does not establish official Android support. A missing Android build target
-alone is also not proof that these Linux static binaries cannot run.
+interpreter. Both verified assets subsequently launched with `--version` on
+the first ARM64 Android device. Installation then hit a hard-link
+`Permission denied` error in app-private storage. The installer now uses
+no-clobber rename and checks for a skipped move. A complete setup rerun later
+exited 0. Codex now installs the full official distribution with its code-mode
+host, rg, bwrap, zsh and manifest; archive and member checks preserve matching
+managed files and reject conflicting files/symlinks. Main-binary startup alone
+is not a complete-package check or official Android support.
 
 For Herdr, verify a shell pane, split/resize, pane CLI operations, and
 disconnect/reattach through native Termux sshd. Keep `$SHELL` and `$TMPDIR`
@@ -82,12 +94,31 @@ Features can fail independently of the main terminal session.
 [Herdr shell selection](https://github.com/herdrdev/herdr/blob/v0.9.0/src/pane.rs),
 [Linux command helpers](https://github.com/herdrdev/herdr/blob/v0.9.0/src/platform/linux.rs).
 
+
+The first-device headless workspace probe passed run/read/split. Its
+interactive SSH TUI also accepted a command and preserved the marker after
+Ctrl+b q detach/reattach within the **same SSH connection**. Physical/network
+disconnect recovery and interactive resize remain separate unverified gates.
+
 For Codex, verify provider login, DNS/TLS, file operations, shell/PTY behavior,
 and the ordinary sandbox. Current official Linux sandboxing uses bubblewrap
 and seccomp and depends on host kernel support. If it cannot initialize,
 report that gate as failed. Do not disable the sandbox to label the probe
 successful. [Official Codex CLI documentation](https://learn.chatgpt.com/docs/codex/cli),
 [official sandbox documentation](https://learn.chatgpt.com/docs/sandboxing).
+
+
+On the tested Android 15 device, the complete Codex 0.153.4 package launched,
+but its normal sandbox stopped with this exact error:
+
+```text
+bwrap: Can't read /proc/sys/kernel/overflowuid: Permission denied
+```
+
+This is a confirmed sandbox-startup failure, not proof that user namespaces
+are disabled. No bypass was used. Installing the bundled helper fixes package
+completeness; it does not remove the observed device restriction. Codex is
+not recorded as ready for normal sandboxed coding on this device.
 
 Android execution policies differ by app build and device. Termux's
 system-linker execution mode cannot load static binaries. Do not change

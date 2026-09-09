@@ -88,7 +88,8 @@ Pitfalls owned by this folder. Keep alphabetical.
 
 | Slug | Symptom keywords | Status |
 |---|---|---|
-| (none yet) | | |
+| [codex-overflowuid-permission-denied](codex-overflowuid-permission-denied.md) | `bwrap`, `overflowuid`, `Permission denied`, version works but sandbox fails | Confirmed normal-sandbox failure; no validated remedy |
+| [hardlink-permission-denied](hardlink-permission-denied.md) | `Permission denied`, `ln -T`, `mv -nT`, launch passes but install fails | Local rename fix; device acceptance partial |
 
 ## Cross-referenced pitfalls (still in their original homes)
 

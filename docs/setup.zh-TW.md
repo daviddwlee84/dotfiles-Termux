@@ -165,3 +165,13 @@ Termux 仍可使用。
 host `doctor` 即使無法選定裝置，也會報告已安裝的主機能力，並以非零狀態提供
 後續指示。對已配對且可連線的裝置，也會透過 SSH 執行原生 target doctor。
 裝置探索失敗不代表沒有連接裝置。
+
+## 裝置端網路失敗
+
+電腦下載 APK 與裝置存取套件／GitHub 使用不同網路路徑。首次裝置測試中，USB
+SSH 已可連線，但 GitHub TLS 請求出現 EOF 或 timeout。使用者自行在裝置啟用
+VPN 後，GitHub 存取與 `git ls-remote` 成功，setup 得以接續。
+
+這項觀察不能確認原本 TLS 失敗的原因。程式沒有修改全域 VPN、proxy 或 DNS
+設定。請先解決裝置連線，再重跑 setup；可重用已保存的 SSH 配對。目前尚未
+實作離線 bundle／安裝模式。

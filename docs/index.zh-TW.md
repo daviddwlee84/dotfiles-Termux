@@ -9,6 +9,10 @@ Vim、tmux、開發工具、Node.js 與 Pi。公鑰 SSH 與 Termux:Boot
 整合預設啟用；wake-lock 預設關閉。Herdr 與 Codex 是明確選用的原生實驗，
 必須另外完成[相容性驗證](tools.md)。
 
+第一台裝置已確認原生 SSH、tmux 與 Herdr session 檢查；Pi 顯示登入 UI，
+Codex 已安裝但正常 sandbox 在讀取 kernel 檔案時被拒絕。認證、網路中斷恢復
+與重開機／背景檢查仍未完成。詳見[分日期的驗證結果](verification.md)。
+
 Termux 使用 Android 的 Linux kernel 與 app 私有檔案系統，不是 Debian VM；
 一般 ADB shell 也不是 Termux session。專案與執行檔應放在 Termux `$HOME`，
 不要放在共享儲存空間。參考[官方執行環境說明](https://github.com/termux/termux-packages/wiki/Termux-execution-environment)。

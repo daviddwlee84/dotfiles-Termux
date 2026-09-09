@@ -49,3 +49,20 @@ guide contains primary links and support qualifications.
 Native first, explicit fallback, no automatic PRoot conversion and no
 weakening Android/agent protections. Revalidate versions before resuming;
 the hashes preserve the initial investigation only.
+
+## Device follow-up — 2026-09-09
+
+The full official Codex package replaced the standalone-archive installation
+path: `codex-package-aarch64-unknown-linux-musl.tar.gz`, 117,238,842 bytes,
+SHA-256 `fc395cb043a1093ab0db34f44aba3199bfaa9ce640cd9be7fd588f44b0da64a4`.
+The package contains the main binary plus code-mode host, rg, bwrap, zsh and
+manifest; member locks verify completeness. It installed on the device at
+`38cbc3c`, but normal sandbox startup failed with the exact overflowuid read
+error in [the pitfall](../pitfalls/codex-overflowuid-permission-denied.md).
+Do not mistake that error for proof about user-namespace configuration.
+
+Herdr headless workspace PTY/run/read/split and interactive same-SSH-session
+detach/reattach passed. Pi's credential-free UI rendered but was stopped by
+its test deadline (124); login/model use remains unverified. The [runtime
+matrix](android-runtime-matrix.md) owns detailed acceptance, keeping this
+note focused on future compatibility work.

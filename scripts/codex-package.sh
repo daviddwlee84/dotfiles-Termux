@@ -23,9 +23,9 @@ codex_package_load_lock() {
     local name hash bytes mode extra seen='|' count=0
     while IFS='|' read -r name hash bytes mode extra; do
         [[ -n $name && $name != \#* ]] || continue
-        codex_package_member_allowed "$name" && [[ -z $extra && $hash =~ ^[a-f0-9]{64}$ && $bytes =~ ^[0-9]+$ ]] || {
+        if ! codex_package_member_allowed "$name" || ! [[ -z $extra && $hash =~ ^[a-f0-9]{64}$ && $bytes =~ ^[0-9]+$ ]]; then
             termux_die 'Invalid Codex package member lock'; return 1;
-        }
+        fi
         case "$seen" in *"|$name|"*) termux_die 'Duplicate Codex package member lock'; return 1;; esac
         if [[ $name == codex-package.json ]]; then
             [[ $mode == 0644 ]] || return 1
