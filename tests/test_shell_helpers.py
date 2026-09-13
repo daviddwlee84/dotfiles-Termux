@@ -118,5 +118,5 @@ source "$DOTFILES_TERMUX_CONFIG_DIR/shell.zsh"
 print -r -- "$OMZ_LOADS:$SUGGEST_LOADS:$HIGHLIGHT_LOADS:$DEV_SHELL_INIT:${_comps[dev]}"
 ''', interactive=True)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout.strip(), '1:1:1:1:_dev')
+        self.assertEqual(result.stdout.strip(), '1:1:1:1:_dev', result.stderr + '\n' + (self.home / 'dev-calls').read_text())
         self.assertEqual((self.home / 'dev-calls').read_text().splitlines(), ['shell-init zsh', 'completion zsh'])

@@ -11,7 +11,7 @@ base="$HOME/.local/share/dotfiles-termux/zsh"
 
 install_asset() (
     set -euo pipefail
-    local name=$1 row arch version url digest format member bytes destination temp staged receipt
+    local name=$1 row arch version url digest format member bytes destination temp staged receipt cleanup
     row=$(awk -F '|' -v name="$name" '$1==name {print; exit}' "$ZSH_REPO/config/assets.lock")
     IFS='|' read -r name arch version url digest format member bytes <<<"$row"
     [[ $arch == any && $version =~ ^[a-f0-9]{40}$ && $digest =~ ^[a-f0-9]{64}$ && $bytes =~ ^[0-9]+$ && $format == tar.gz && $url == https://* && $member =~ ^[a-zA-Z0-9._-]+$ ]] || { termux_die "Invalid zsh asset lock: $name"; return 1; }
@@ -22,7 +22,11 @@ install_asset() (
     else
         [[ $action == install ]] || { termux_die 'zsh assets are missing; run bootstrap.sh packages with zsh selected'; return 1; }
         temp=$(mktemp -d "$base/.install.XXXXXX")
-        trap 'rm -rf "$temp"' EXIT
+        # Bash 3.2 may drop function locals before this subshell's EXIT trap.
+        # Capture a shell-quoted path now, rather than expanding it on exit.
+        printf -v cleanup 'rm -rf -- %q' "$temp"
+        # shellcheck disable=SC2064 # Intentionally capture the quoted local now.
+        trap "$cleanup" EXIT
         curl --fail --location --proto '=https' --tlsv1.2 --retry 2 --connect-timeout 15 --max-time 600 --output "$temp/download" "$url"
         [[ $(wc -c <"$temp/download" | tr -d ' ') == "$bytes" ]] || { termux_die "$name size mismatch"; return 1; }
         printf '%s  %s\n' "$digest" "$temp/download" | sha256sum -c - >/dev/null
