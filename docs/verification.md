@@ -104,6 +104,30 @@ Use `--backlog` for a research note; its template is
 `backlog/.backlog-doc.md.template`. New user documentation needs English/zh-TW
 pairs and both navigation entries in `mkdocs.yml`.
 
+## Herdr and dev-cli follow-up — 2026-09-13
+
+On the same ARM64 Android 15 device:
+
+- Herdr 0.9.0 was already installed. Its isolated PTY/run/read/split probe passed
+  again after the native package synchronization.
+- Full package synchronization and optional selection `herdr,codex,dev` completed.
+  Pi and the complete Codex package were preserved; no new Codex sandbox claim
+  is made. Two consecutive chezmoi applies left no managed-file differences.
+- The Linux dev-cli v0.2.33 artifact passed launch checks but crashed at
+  `syscall.faccessat2` during Git lookup. It is superseded by the native source
+  build; see [failure and migration](https://github.com/daviddwlee84/dotfiles-Termux/blob/main/pitfalls/dev-sigsys-faccessat2.md).
+- The source installer built dev-cli v0.2.33 with Termux Go 1.27.1/Clang for
+  Android. The result used `/system/bin/linker64`. It passed navigation into
+  a scratch Git repository with spaces in its path, Markdown note creation,
+  and SQLite FTS search under an isolated HOME. Probe state was removed.
+- A fresh interactive SSH login loaded the dev shell wrapper and completion.
+  The actual dev TUI opened, switched to REPOS, displayed the Termux checkout,
+  and exited normally with `q`. A user-owned dev config was initialized for
+  this device; the desktop configuration was not copied.
+
+Full task/worktree lifecycle, dev-to-Herdr operations, network disruption,
+reboot/background behavior and authenticated agent use remain separate gates.
+
 ## Current verification record — 2026-09-09
 
 Published baseline evidence: [GitHub Actions run 34298511347](https://github.com/daviddwlee84/dotfiles-Termux/actions/runs/34298511347)

@@ -11,7 +11,7 @@ for the exact completed and pending checks.
 | Node.js LTS and npm | Official Termux packages | Runtime for Pi |
 | Pi | Maintained `@earendil-works/pi-coding-agent` npm package | Native default, controlled by `installCodingAgents` |
 | Herdr | Pinned upstream Linux static binary | Explicit native experiment |
-| dev-cli (`dev`) | Pinned v0.2.33 upstream Linux ARM64 static binary | Opt-in with `--with dev`; Android runtime unverified |
+| dev-cli (`dev`) | Pinned v0.2.33 source built with native Termux Go/Clang | Opt-in with `--with dev`; Android build required |
 | Codex | Complete pinned official Linux-musl package and companions | Installed on the first device; normal sandbox blocked there |
 | Claude Code | Official Linux installer inside an optional PRoot distro | Guide only; no native installer in this repo |
 | Gemini CLI, OpenCode, OMP | Future compatibility work | No automatic installer |
@@ -75,17 +75,25 @@ you want to retain that selection: `--with herdr,codex,dev`. Omit `--with`
 on later runs to retain all saved choices. These tools remain opt-in; a
 plain fresh setup does not install them.
 
-The installer verifies the dev-cli v0.2.33 archive's size and SHA-256,
-extracts its `dev` member, checks native `--version`, then installs
-`~/.local/bin/dev`. Existing commands are preserved, including other versions;
-setup/packages/upgrade do not replace existing optional binaries.
+The installer verifies the dev-cli v0.2.33 **source archive** size and SHA-256,
+then builds `~/.local/bin/dev` with Termux's native Go/Clang and `GOOS=android`.
+The first explicit package sync adds `golang` (and its Clang dependency); source
+compilation and dependency downloads take longer than downloading a binary.
+Go uses the source's `go.sum` with `-mod=readonly`, `GOTOOLCHAIN=local`, and two
+build workers. It never fetches a generic Linux Go toolchain.
 
-On **2026-09-13**, the downloaded archive matched the upstream release
-metadata. Its executable was an AArch64 ELF with no dynamic interpreter or
-dynamic section. This is an asset inspection result; Android execution,
-SQLite state, Git/worktree operations and Herdr integration still need a
-device test. Sources: [release](https://github.com/daviddwlee84/dev-cli/releases/tag/v0.2.33),
-[static build workflow](https://github.com/daviddwlee84/dev-cli/blob/v0.2.33/.github/workflows/release.yml).
+The Linux v0.2.33 release passes `--version` but fails during Git command lookup
+on the tested Android 15 device with `SIGSYS: bad system call` in
+`syscall.faccessat2`. Go's Android target avoids this blocked call. A static ELF
+alone is therefore insufficient. See the
+[observed failure and migration](https://github.com/daviddwlee84/dotfiles-Termux/blob/main/pitfalls/dev-sigsys-faccessat2.md).
+Sources: [versioned source](https://github.com/daviddwlee84/dev-cli/tree/v0.2.33),
+[Android-aware executable lookup](https://github.com/golang/go/blob/go1.27.1/src/internal/syscall/unix/eaccess.go).
+
+Existing commands are preserved, including other versions; setup/packages/upgrade
+do not replace existing optional binaries. An earlier experimental Linux `dev`
+needs an explicit backup/removal before the native installation; see the migration
+above. New installs use the Android source build directly.
 
 Open a new Bash shell after setup. Interactive shells load `dev shell-init bash`
 for parent-directory navigation and `dev completion bash` for tab completion.

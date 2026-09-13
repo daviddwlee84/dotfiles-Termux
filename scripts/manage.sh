@@ -92,6 +92,9 @@ install_packages() {
     while IFS= read -r package; do
         [[ -z $package || $package == \#* ]] || packages+=("$package")
     done <"$REPO/config/packages-base.txt"
+    # The Linux dev-cli release hits Android's syscall filter in exec.LookPath.
+    # Build with the native Go toolchain, only when dev is selected.
+    case ",$OPTIONAL_TOOLS," in *,dev,*) packages+=(golang) ;; esac
     if [[ $INSTALL_AGENTS == true ]]; then
         while IFS= read -r package; do
             [[ -z $package || $package == \#* ]] || packages+=("$package")

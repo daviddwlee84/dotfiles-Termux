@@ -201,6 +201,7 @@ class TargetTests(unittest.TestCase):
         self.write_command("herdr", 'printf "herdr 0.9.0\\n"\n')
         self.write_command("dev", 'printf "dev version v0.2.33\\n"\n')
         self.configure("--with", "herdr,dev")
+        self.assertIn("golang", (self.root / "packages").read_text())
         self.assertIn("optionalTools=herdr,dev", self.bootstrap("doctor"))
         (self.root / "packages").unlink()
         self.bootstrap("apply")

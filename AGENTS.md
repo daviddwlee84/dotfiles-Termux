@@ -20,8 +20,11 @@ README and bilingual setup documentation before changing installation.
 - Host automation is macOS/Linux uv/Python. Select one authorized ADB serial.
   Never type into an arbitrary existing terminal/job. Confirm a new Termux
   shell or provide manual paste fallback. Clean up only owned ADB mappings.
-- Downloads use pinned versions, SHA-256 and size checks. Optional Herdr,
-  Codex and dev-cli Linux artifacts are experimental. Codex requires the complete official
+- Downloads use pinned versions, SHA-256 and size checks. Optional Herdr and
+  Codex Linux artifacts are experimental. dev-cli must build with native Termux
+  Go targeting Android; its Linux release crashes at `faccessat2` under Android's
+  syscall filter. Never substitute the Linux release or auto-download a Linux
+  Go toolchain. Codex requires the complete official
   package layout and companions, not only its main binary. Keep installation,
   UI and normal-sandbox results separate; see
   [the observed Codex sandbox failure](pitfalls/codex-overflowuid-permission-denied.md).

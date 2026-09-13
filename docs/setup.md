@@ -13,6 +13,9 @@ Pi 0.85.1 and Codex 0.153.4 in one command:
 uv run --script scripts/host.py setup --with herdr,codex,dev --install-coding-agents true
 ```
 
+For an already provisioned device, update its checkout with the command below
+before asking computer setup to install newly added tools.
+
 For a fresh native Termux shell, use the device-only
 [one-line bootstrap in the README](https://github.com/daviddwlee84/dotfiles-Termux#one-line-setup-herdr--dev-cli--coding-agents).
 For an existing device checkout, run inside Termux:

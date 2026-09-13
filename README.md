@@ -35,6 +35,9 @@ From the umbrella **dotfiles-all** clone, the equivalent is:
 just termux-setup --with herdr,codex,dev --install-coding-agents true
 ```
 
+If the device already has an older checkout, update it with the existing-device
+command below before selecting newly added tools through computer setup.
+
 For a **fresh native Termux shell**, without a computer, this single line
 installs Git, clones the repository and runs setup:
 
@@ -45,6 +48,9 @@ pkg update -y && pkg upgrade -y && pkg install -y git && mkdir -p "$HOME/.local/
 This selects **Herdr 0.9.0**, **dev-cli 0.2.33** (`dev`), **Pi 0.85.1** and
 **Codex 0.153.4**, alongside the native baseline. Codex's normal sandbox is
 blocked on the tested device; installing it does not make that gate pass.
+dev-cli builds on the device using Termux Go/Clang; the first build downloads
+dependencies and can take several minutes. The generic Linux dev release fails
+on Android during Git lookup and is not used.
 For Herdr + dev-cli + Pi only, use `--with herdr,dev` instead. Claude Code
 requires the separate [PRoot guide](docs/proot.md). See [tool support](docs/tools.md).
 

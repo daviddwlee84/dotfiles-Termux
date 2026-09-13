@@ -7,7 +7,7 @@ source "$TOOLS_REPO/scripts/pair.sh"
 
 tool_help() {
     printf '%s\n' 'Usage: bash scripts/tools.sh install pi,herdr,codex,dev | doctor | probe herdr|codex|pi' \
-        'Existing tools are preserved. Herdr/Codex/dev downloads are ARM64 native experiments.' \
+        'Existing tools are preserved. Herdr/Codex are ARM64 experiments; dev builds with native Termux Go.' \
         'Probes use isolated temporary state; full SSH/reconnect/auth acceptance remains separate.'
 }
 
@@ -59,6 +59,21 @@ tool_install() (
         case "$format" in
             raw) cp "$temp/download" "$temp/candidate" ;;
             tar.gz) tar -xOf "$temp/download" "$member" >"$temp/candidate" ;;
+            go.tar.gz)
+                [[ $tool == dev && $version =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ && $member == "dev-cli-${version#v}" ]] || return 1
+                command -v go >/dev/null || { termux_die 'dev requires native golang; run bootstrap.sh packages with dev selected'; return 1; }
+                mkdir "$temp/source"
+                tar -xzf "$temp/download" -C "$temp/source"
+                (
+                    cd "$temp/source/$member"
+                    # Android-aware stdlib avoids blocked Linux syscalls. Never
+                    # auto-download a generic Linux Go toolchain; retain go.sum.
+                    GOTOOLCHAIN=local GOOS=android CGO_ENABLED=1 GOMAXPROCS=2 \
+                        go build -p 2 -mod=readonly -trimpath \
+                        -ldflags "-s -w -X github.com/daviddwlee84/dev-cli/internal/cli.Version=$version" \
+                        -o "$temp/candidate" ./cmd/dev
+                )
+                ;;
             *) termux_die 'Unknown asset format'; return 1 ;;
         esac
         [[ -s $temp/candidate ]] || return 1

@@ -13,6 +13,9 @@
 uv run --script scripts/host.py setup --with herdr,codex,dev --install-coding-agents true
 ```
 
+若裝置之前已安裝過，先用下方指令更新裝置上的 checkout，再透過電腦 setup
+選用新版才加入的工具。
+
 全新的原生 Termux shell 可直接貼上
 [README 的裝置端一行安裝指令](https://github.com/daviddwlee84/dotfiles-Termux#one-line-setup-herdr--dev-cli--coding-agents)。
 如果裝置上已有 checkout，在 Termux 執行：

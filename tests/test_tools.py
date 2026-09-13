@@ -62,12 +62,46 @@ class ToolTests(unittest.TestCase):
         path.chmod(0o755)
         return path
 
-    def lock(self, digest=None, size=None, tool="herdr", format="raw", member="-"):
+    def lock(self, digest=None, size=None, tool="herdr", format="raw", member="-", version="v1"):
         data = self.payload.read_bytes()
         digest = digest or hashlib.sha256(data).hexdigest()
         size = size if size is not None else len(data)
         (self.repo / "config/assets.lock").write_text(
-            f"{tool}|aarch64|v1|https://example.invalid/{tool}|{digest}|{format}|{member}|{size}\n")
+            f"{tool}|aarch64|{version}|https://example.invalid/{tool}|{digest}|{format}|{member}|{size}\n")
+
+    def dev_source_archive(self):
+        with tarfile.open(self.payload, "w:gz") as archive:
+            body = b"module fixture\n"
+            entry = tarfile.TarInfo("dev-cli-0.2.33/go.mod")
+            entry.size = len(body)
+            archive.addfile(entry, io.BytesIO(body))
+        self.lock(tool="dev", format="go.tar.gz", member="dev-cli-0.2.33", version="v0.2.33")
+
+    def test_dev_source_build_uses_android_and_never_downloads_a_toolchain(self):
+        self.dev_source_archive()
+        self.script("go", '''test "$GOOS" = android
+test "$CGO_ENABLED" = 1
+test "$GOTOOLCHAIN" = local
+test "$GOMAXPROCS" = 2
+test -f go.mod
+printf '%s\\n' "$*" > "$DOTFILES_TEST_ROOT/go-args"
+while [ "$1" != -o ]; do shift; done
+printf '#!/bin/sh\\nprintf "dev version v0.2.33\\\\n"\\n' > "$2"
+''')
+        result = self.run_tool("install", "dev")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertTrue((self.home / ".local/bin/dev").is_file())
+        args = (self.root / "go-args").read_text()
+        self.assertIn("build -p 2 -mod=readonly", args)
+        self.assertIn("cli.Version=v0.2.33", args)
+
+    def test_dev_failed_native_build_does_not_publish(self):
+        self.dev_source_archive()
+        self.script("go", "exit 7\n")
+        result = self.run_tool("install", "dev")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse((self.home / ".local/bin/dev").exists())
+        self.assertEqual(list((self.prefix / "tmp").iterdir()), [])
 
     def dev_archive(self, body=b"#!/bin/sh\nprintf 'dev version v1\\n'\n", member="dev"):
         with tarfile.open(self.payload, "w:gz") as archive:

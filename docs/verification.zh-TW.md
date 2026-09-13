@@ -91,6 +91,27 @@ bash scripts/todo-kanban.sh --validate-only TODO.md
 需要研究筆記時加上 `--backlog`，其模板位於 `backlog/.backlog-doc.md.template`。
 新增使用者文件需維持 English/zh-TW 成對，並更新 `mkdocs.yml` navigation 與翻譯。
 
+## Herdr 與 dev-cli 後續驗證 — 2026-09-13
+
+同一台 ARM64 Android 15 裝置的結果：
+
+- Herdr 0.9.0 原本就已安裝；完整原生套件同步後，隔離的 PTY/run/read/split
+  probe 再次通過。
+- 完整套件同步及 `herdr,codex,dev` 選擇成功完成，保留 Pi 與完整 Codex package；
+  沒有新增 Codex sandbox 通過的宣稱。連續兩次 chezmoi apply 後沒有受管理檔案差異。
+- Linux dev-cli v0.2.33 artifact 雖通過啟動檢查，卻在查找 Git 時於
+  `syscall.faccessat2` 崩潰。已改用原生 source build；詳見
+  [失敗與遷移紀錄](https://github.com/daviddwlee84/dotfiles-Termux/blob/main/pitfalls/dev-sigsys-faccessat2.md)。
+- source installer 使用 Termux Go 1.27.1/Clang 建置 Android 版 dev-cli v0.2.33，
+  執行檔採用 `/system/bin/linker64`。在隔離 HOME 內通過含空白路徑的 Git repository
+  導航、Markdown note 建立及 SQLite 全文搜尋，之後移除 probe 狀態。
+- 新的互動 SSH login 正常載入 dev shell wrapper 與補全；實際 dev TUI 可開啟、
+  切換到 REPOS、顯示 Termux checkout，再按 `q` 正常離開。此裝置已初始化自己的
+  dev config，沒有複製電腦設定。
+
+完整 task/worktree lifecycle、dev 對 Herdr 的操作、網路中斷恢復、重開機／背景
+行為與已登入的 agent 使用仍是獨立的待驗證項目。
+
 ## 目前驗證紀錄 — 2026-09-09
 
 已發布的基準證據：[GitHub Actions run 34298511347](https://github.com/daviddwlee84/dotfiles-Termux/actions/runs/34298511347)
