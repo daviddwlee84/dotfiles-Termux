@@ -9,6 +9,15 @@ export EDITOR PAGER
 if [[ $- == *i* ]]; then
     alias ll='ls -al'
     alias g='git'
+    if command -v dev >/dev/null 2>&1; then
+        if _dotfiles_dev_init=$(command dev shell-init bash); then
+            eval "$_dotfiles_dev_init"
+        fi
+        if _dotfiles_dev_completion=$(command dev completion bash); then
+            eval "$_dotfiles_dev_completion"
+        fi
+        unset _dotfiles_dev_init _dotfiles_dev_completion
+    fi
     if [[ ${TERM:-dumb} != dumb ]] && command -v starship >/dev/null 2>&1; then
         eval "$(starship init bash)"
     fi

@@ -10,6 +10,7 @@
 | Node.js LTS 與 npm | 官方 Termux 套件 | Pi runtime |
 | Pi | 維護中的 `@earendil-works/pi-coding-agent` npm 套件 | 原生預設，由 `installCodingAgents` 控制 |
 | Herdr | 固定版本上游 Linux static binary | 明確選用的原生實驗 |
+| dev-cli（`dev`） | 固定 v0.2.33 上游 Linux ARM64 static binary | 以 `--with dev` 選用；Android runtime 尚待驗證 |
 | Codex | 完整固定版本官方 Linux-musl package 與 companions | 第一台裝置已安裝，但正常 sandbox 在該裝置失敗 |
 | Claude Code | 選用 PRoot distro 內的官方 Linux installer | 僅指南；repo 沒有原生 installer |
 | Gemini CLI、OpenCode、OMP | 未來相容性工作 | 不自動安裝 |
@@ -52,6 +53,50 @@ Pi 在 Termux 不支援圖片剪貼簿貼上。companion 為選用項目，基�
 ```sh
 pkg update && pkg upgrade -y && pkg install -y termux-api
 ```
+
+## dev-cli
+
+一起安裝我們的 repository/task CLI 與 Herdr 0.9.0：
+
+```sh
+# 電腦端，在這個 standalone clone：
+just setup --with herdr,dev
+# 在 dotfiles-all 的等效指令：just termux-setup --with herdr,dev
+
+# 或在 Termux clone 內：
+bash bootstrap.sh packages --with herdr,dev
+```
+
+`--with` 會取代保存的選用工具清單。如果也要保留 Codex 的選擇，請用
+`--with herdr,codex,dev`；後續省略 `--with` 就會保留全部既有選擇。
+這些工具維持選用；全新環境只執行一般 setup 不會安裝它們。
+
+installer 驗證 dev-cli v0.2.33 archive 的大小與 SHA-256，擷取其中的 `dev`，
+確認原生 `--version` 能啟動後，安裝至 `~/.local/bin/dev`。既有指令會保留，
+即使版本不同也一樣；setup/packages/upgrade 不會覆蓋已安裝的選用 binary。
+
+**2026-09-13** 下載的 archive 與上游 release metadata 相符，執行檔為沒有
+dynamic interpreter 或 dynamic section 的 AArch64 ELF。這是 asset 檢查結果；
+Android 執行、SQLite 狀態、Git/worktree 操作及 Herdr 整合仍需實機測試。
+來源：[release](https://github.com/daviddwlee84/dev-cli/releases/tag/v0.2.33)、
+[static build workflow](https://github.com/daviddwlee84/dev-cli/blob/v0.2.33/.github/workflows/release.yml)。
+
+setup 後開啟新的 Bash shell。互動 shell 會載入 `dev shell-init bash`，讓指令
+能切換目前 shell 的目錄，並載入 `dev completion bash` 提供 Tab 補全。
+shell 啟動不會安裝套件。目錄切換需要私有暫存檔，請保留 Termux 的 `$TMPDIR`
+指向 `$PREFIX/tmp`。驗證方式：
+
+```sh
+herdr --version
+dev --version
+type dev
+complete -p dev
+dev config path
+```
+
+用 `dev config init --help` 查看如何設定這台裝置的 repository scan roots，
+再檢查 `dev doctor`。這套 setup 不會帶入電腦上的 dev 設定或帳號憑證。
+先在暫存專案驗證目錄切換，再於 Android 使用 task/worktree 或 Herdr 功能。
 
 ## 原生 Herdr 與 Codex 實驗
 

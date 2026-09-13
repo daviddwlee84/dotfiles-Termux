@@ -10,7 +10,8 @@ experimental repository; ARM64 is the first runtime target.
 The default setup provides Bash, chezmoi, Starship, Git, Vim, tmux,
 development utilities, Node.js and Pi. Public-key SSH listens on port 8022;
 Termux:Boot integration is enabled and wake-lock is off. Herdr and Codex are
-explicit native experiments (`--with herdr,codex`). Claude Code has a separate
+explicit native experiments (`--with herdr,codex`). Our dev-cli (`dev`) is also
+opt-in: use `--with herdr,dev` for Herdr 0.9.0 and dev-cli 0.2.33. Claude Code has a separate
 [PRoot guide](docs/proot.md).
 
 On the first Android 15 device, native SSH, tmux and Herdr session checks
@@ -18,6 +19,54 @@ passed. The complete Codex package installed, but its normal sandbox failed
 on a denied kernel-file read. Pi rendered its login UI; authenticated model
 use and reboot/background behavior remain unverified. See the
 [dated device results](docs/verification.md#current-verification-record-2026-09-09).
+
+## One-line setup: Herdr + dev-cli + coding agents
+
+On **macOS/Linux**, from an existing clone of this repository, connect and
+authorize the Android USB device, then run:
+
+```sh
+uv run --script scripts/host.py setup --with herdr,codex,dev --install-coding-agents true
+```
+
+From the umbrella **dotfiles-all** clone, the equivalent is:
+
+```sh
+just termux-setup --with herdr,codex,dev --install-coding-agents true
+```
+
+For a **fresh native Termux shell**, without a computer, this single line
+installs Git, clones the repository and runs setup:
+
+```sh
+pkg update -y && pkg upgrade -y && pkg install -y git && mkdir -p "$HOME/.local/share" && git clone https://github.com/daviddwlee84/dotfiles-Termux.git "$HOME/.local/share/dotfiles-Termux" && bash "$HOME/.local/share/dotfiles-Termux/bootstrap.sh" setup --with herdr,codex,dev --install-coding-agents true
+```
+
+This selects **Herdr 0.9.0**, **dev-cli 0.2.33** (`dev`), **Pi 0.85.1** and
+**Codex 0.153.4**, alongside the native baseline. Codex's normal sandbox is
+blocked on the tested device; installing it does not make that gate pass.
+For Herdr + dev-cli + Pi only, use `--with herdr,dev` instead. Claude Code
+requires the separate [PRoot guide](docs/proot.md). See [tool support](docs/tools.md).
+
+If the Termux clone already exists, use this line **inside Termux** to update
+its source/configuration and install the selected tools:
+
+```sh
+cd "$HOME/.local/share/dotfiles-Termux" && bash bootstrap.sh update && bash bootstrap.sh packages --with herdr,codex,dev --install-coding-agents true
+```
+
+`--with` replaces the saved optional list; omitting it preserves that list.
+Existing binaries are retained, so these commands install missing tools but
+do not force their versions. Open a new Bash shell for dev navigation and
+tab completion. Device-only setup leaves SSH `pending-key` until you add a
+trusted public key; computer setup pairs one automatically.
+
+**Yes, chezmoi manages this afterward.** `chezmoi diff`, `chezmoi apply` and
+`chezmoi update` work from any directory after setup. They manage configuration;
+`just packages` / `just upgrade` inside the Termux clone explicitly synchronize
+packages. New tool selections require `packages` or setup. dev's own config
+and the create-once Herdr config remain locally editable. See
+[saved settings and maintenance](docs/setup.md#configuration-and-package-updates).
 
 ## Set up a connected device
 
@@ -60,7 +109,7 @@ Run these inside the cloned repository in Termux:
 
 ```sh
 bash bootstrap.sh setup             # first setup, including full package sync
-just diff                          # preview managed configuration
+chezmoi diff                       # preview actual managed-file differences
 just apply                         # configuration only
 bash bootstrap.sh update            # ff-only source update + configuration
 just packages                      # explicit full package sync + selected tools

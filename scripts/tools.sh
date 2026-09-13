@@ -6,8 +6,8 @@ TOOLS_REPO=$(CDPATH='' cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
 source "$TOOLS_REPO/scripts/pair.sh"
 
 tool_help() {
-    printf '%s\n' 'Usage: bash scripts/tools.sh install pi,herdr,codex | doctor | probe herdr|codex|pi' \
-        'Existing tools are preserved. Herdr/Codex downloads are ARM64 native experiments.' \
+    printf '%s\n' 'Usage: bash scripts/tools.sh install pi,herdr,codex,dev | doctor | probe herdr|codex|pi' \
+        'Existing tools are preserved. Herdr/Codex/dev downloads are ARM64 native experiments.' \
         'Probes use isolated temporary state; full SSH/reconnect/auth acceptance remains separate.'
 }
 
@@ -174,7 +174,7 @@ tool_main() {
             [[ -n $options && $options != ,* && $options != *, && $options != *,,* ]] || return 2
             local -a requested
             IFS=, read -r -a requested <<<"$options"
-            for tool in "${requested[@]}"; do case "$tool" in pi|herdr|codex) ;; *) termux_die "Unknown tool: $tool"; return 2;; esac; done
+            for tool in "${requested[@]}"; do case "$tool" in pi|herdr|codex|dev) ;; *) termux_die "Unknown tool: $tool"; return 2;; esac; done
             for tool in "${requested[@]}"; do
                 # A child Bash keeps errexit active even when the caller catches optional failures.
                 if ! bash "$TOOLS_REPO/scripts/tools.sh" _install-one "$tool"; then failed=1; fi
@@ -182,7 +182,7 @@ tool_main() {
             return "$failed"
             ;;
         doctor)
-            for tool in pi herdr codex; do
+            for tool in pi herdr codex dev; do
                 if command -v "$tool" >/dev/null 2>&1; then
                     printf '%s: installed (%s); ' "$tool" "$(command -v "$tool")"
                     if [[ -r $TERMUX_STATE/tools/$tool.status ]]; then cat "$TERMUX_STATE/tools/$tool.status"; else printf 'unverified external installation\n'; fi
@@ -203,7 +203,7 @@ tool_main() {
 
 if [[ ${1:-} == _install-one ]]; then
     termux_context
-    case ${2:-} in pi|herdr|codex) tool_install "$2";; *) exit 2;; esac
+    case ${2:-} in pi|herdr|codex|dev) tool_install "$2";; *) exit 2;; esac
 else
     tool_main "$@"
 fi

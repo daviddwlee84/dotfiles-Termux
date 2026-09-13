@@ -4,6 +4,32 @@
 目標是 ARM64。電腦端 helper 支援 macOS 與 Linux。Windows 使用者可以先採用
 下方的裝置端手動安裝流程。
 
+## 一次選好需要的工具
+
+電腦端在這個 clone 內，一行選用 Herdr 0.9.0、dev-cli 0.2.33、Pi 0.85.1
+與 Codex 0.153.4：
+
+```sh
+uv run --script scripts/host.py setup --with herdr,codex,dev --install-coding-agents true
+```
+
+全新的原生 Termux shell 可直接貼上
+[README 的裝置端一行安裝指令](https://github.com/daviddwlee84/dotfiles-Termux#one-line-setup-herdr--dev-cli--coding-agents)。
+如果裝置上已有 checkout，在 Termux 執行：
+
+```sh
+cd "$HOME/.local/share/dotfiles-Termux" && bash bootstrap.sh update && bash bootstrap.sh packages --with herdr,codex,dev --install-coding-agents true
+```
+
+只要 Herdr/dev-cli、不選 Codex 時用 `--with herdr,dev`；Pi 仍啟用。
+`--with` 取代保存的選用清單，既有 binary 會保留。安裝成功與
+[runtime 支援](tools.md) 分開判斷，尤其是已觀察到的 Codex sandbox 失敗。
+
+setup 後可在任意目錄執行 `chezmoi diff/apply/update` 管理受管理設定；
+新增選用工具與完整套件同步則用 `packages`。dev config 由使用者管理，
+Herdr config 是只建立一次的 seed。開啟新 Bash shell 後就會載入 dev 的目錄
+切換與補全功能。
+
 ## 指令要在哪裡執行？
 
 完整 provisioning 與 SSH helper 都在公開的
@@ -64,6 +90,7 @@ uv run --script scripts/host.py setup --serial SERIAL --manual
 uv run --script scripts/host.py setup --serial SERIAL --api
 uv run --script scripts/host.py setup --serial SERIAL --ssh-mode adb
 uv run --script scripts/host.py setup --serial SERIAL --with herdr,codex
+uv run --script scripts/host.py setup --serial SERIAL --with herdr,dev
 ```
 
 需要配對時，`--manual` 顯示一次性指令，由你貼到新的 Termux shell。
@@ -197,7 +224,7 @@ chezmoi execute-template '{{ .chezmoi.workingTree }}'
 改成只升級個別依賴。套件操作需要正常的 mirror；下載失敗時先修復 mirror／網路，
 再重跑明確的套件操作。參考 [Termux 套件管理](https://github.com/termux/termux-packages/wiki/Package-Management)。
 
-裝置端選擇會保留至下次執行。省略 `--with` 保留 Herdr/Codex 選擇；提供它會取代
+裝置端選擇會保留至下次執行。省略 `--with` 保留 Herdr/Codex/dev-cli 選擇；提供它會取代
 選擇清單，但不解除安裝既有工具。Pi 由 `--install-coding-agents true|false`
 控制，預設 true。電腦與裝置端其他布林選項包含 `--install-ssh-server`、
 `--install-termux-boot` 與 `--termux-wake-lock`。
@@ -220,7 +247,7 @@ chezmoi execute-template '{{ .chezmoi.workingTree }}'
 | `installTermuxBoot` | `true` | Start SSH with Termux Boot |
 | `termuxWakeLock` | `false` | Acquire wake lock at boot |
 | `installCodingAgents` | `true` | Install coding agents (Pi) |
-| `optionalTools` | `""` | Optional tools (herdr,codex or empty) |
+| `optionalTools` | `""` | Optional tools (herdr,codex,dev or empty) |
 
 init data 的套件選擇在下次明確的 setup/packages/upgrade 生效；僅套用設定不會
 下載工具。電腦 `setup` 只在新設定採用預設值；重跑會保留裝置選擇，只有明確

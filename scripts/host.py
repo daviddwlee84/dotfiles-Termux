@@ -854,7 +854,7 @@ def parser():
             sub.add_argument("--wake-lock", dest="termux_wake_lock", action="store_const", const="true")
             sub.add_argument("--install-ssh-server", choices=("true", "false"))
             sub.add_argument("--install-coding-agents", choices=("true", "false"))
-            sub.add_argument("--with", dest="with_tools", help="optional native experiments: herdr,codex")
+            sub.add_argument("--with", dest="with_tools", help="optional native experiments: herdr,codex,dev")
             sub.add_argument("--timeout", type=int, default=900)
         if name == "ssh":
             sub.add_argument("command", nargs=argparse.REMAINDER)
@@ -869,8 +869,8 @@ def main(argv=None):
         if args.subcommand == "setup":
             if (args.ssh_port is not None and not 1024 <= args.ssh_port <= 65535) or args.timeout <= 0:
                 raise SetupError("Choose an SSH port from 1024–65535 and a positive timeout.")
-            if args.with_tools not in (None, "") and any(value not in ("herdr", "codex") for value in args.with_tools.split(",")):
-                raise SetupError("--with accepts herdr,codex only.")
+            if args.with_tools not in (None, "") and any(value not in ("herdr", "codex", "dev") for value in args.with_tools.split(",")):
+                raise SetupError("--with accepts herdr,codex,dev only.")
         if args.subcommand == "doctor":
             try:
                 adb = Adb(select_device(list_devices(), args.serial))

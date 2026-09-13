@@ -85,7 +85,7 @@ termux_validate_settings() {
     local old_ifs=$IFS
     IFS=,
     for option in $OPTIONAL_TOOLS; do
-        case "$option" in herdr|codex) ;; *) IFS=$old_ifs; termux_die "Unknown optional tool: $option"; return 1;; esac
+        case "$option" in herdr|codex|dev) ;; *) IFS=$old_ifs; termux_die "Unknown optional tool: $option"; return 1;; esac
     done
     IFS=$old_ifs
 }

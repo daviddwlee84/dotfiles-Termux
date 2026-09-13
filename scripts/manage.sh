@@ -50,7 +50,7 @@ while (($#)); do
             printf '%s\n' 'bootstrap.sh [setup|apply|update|packages|upgrade|doctor] [--non-interactive] [--dry-run]' \
                 '  --install-ssh-server true|false --ssh-mode lan|adb --ssh-port 8022' \
                 '  --install-termux-boot true|false --termux-wake-lock true|false' \
-                '  --install-coding-agents true|false --with herdr,codex --authorized-key-file FILE' \
+                '  --install-coding-agents true|false --with herdr,codex,dev --authorized-key-file FILE' \
                 'setup/packages/upgrade synchronize all Termux packages; apply/update change configuration only.'
             exit 0 ;;
         --authorized-key-file|--ssh-mode|--ssh-port|--install-ssh-server|--install-termux-boot|--termux-wake-lock|--install-coding-agents|--with)

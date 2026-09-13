@@ -4,6 +4,33 @@ Use native Termux from F-Droid on Android 7 or newer; ARM64 is the first
 runtime target for this repository. The computer helper supports macOS and
 Linux. Windows users can follow the device-only instructions below.
 
+## Quick setup with the selected tools
+
+On the computer, from this clone, select Herdr 0.9.0, dev-cli 0.2.33,
+Pi 0.85.1 and Codex 0.153.4 in one command:
+
+```sh
+uv run --script scripts/host.py setup --with herdr,codex,dev --install-coding-agents true
+```
+
+For a fresh native Termux shell, use the device-only
+[one-line bootstrap in the README](https://github.com/daviddwlee84/dotfiles-Termux#one-line-setup-herdr--dev-cli--coding-agents).
+For an existing device checkout, run inside Termux:
+
+```sh
+cd "$HOME/.local/share/dotfiles-Termux" && bash bootstrap.sh update && bash bootstrap.sh packages --with herdr,codex,dev --install-coding-agents true
+```
+
+Use `--with herdr,dev` to select Herdr/dev-cli without Codex; Pi remains
+enabled. `--with` replaces the saved optional list, and existing binaries
+are preserved. Installation is separate from [runtime support](tools.md),
+especially the observed Codex sandbox failure.
+
+After setup, use `chezmoi diff/apply/update` from any directory for managed
+configuration. Use `packages` for newly selected tools and full package
+synchronization. dev config is user-owned; the Herdr config is a create-once
+seed. Open a new Bash shell to load dev navigation and completion.
+
 ## Which command runs where?
 
 All provisioning and SSH helper code is in the public
@@ -67,6 +94,7 @@ uv run --script scripts/host.py setup --serial SERIAL --manual
 uv run --script scripts/host.py setup --serial SERIAL --api
 uv run --script scripts/host.py setup --serial SERIAL --ssh-mode adb
 uv run --script scripts/host.py setup --serial SERIAL --with herdr,codex
+uv run --script scripts/host.py setup --serial SERIAL --with herdr,dev
 ```
 
 When pairing is needed, `--manual` prints the one-time command for you to
@@ -219,7 +247,7 @@ if downloads fail, resolve the mirror/network problem and repeat the explicit
 command. [Termux package management](https://github.com/termux/termux-packages/wiki/Package-Management).
 
 Target selections persist between runs. Omitting `--with` retains the optional
-Herdr/Codex selection; providing it replaces that selection without uninstalling
+Herdr/Codex/dev-cli selection; providing it replaces that selection without uninstalling
 tools. Pi is controlled by `--install-coding-agents true|false` and defaults
 to true. Boolean host and target options also include `--install-ssh-server`,
 `--install-termux-boot`, and `--termux-wake-lock`.
@@ -245,7 +273,7 @@ To review native init prompts, run `chezmoi init --prompt` and then
 | `installTermuxBoot` | `true` | Start SSH with Termux Boot |
 | `termuxWakeLock` | `false` | Acquire wake lock at boot |
 | `installCodingAgents` | `true` | Install coding agents (Pi) |
-| `optionalTools` | `""` | Optional tools (herdr,codex or empty) |
+| `optionalTools` | `""` | Optional tools (herdr,codex,dev or empty) |
 
 A changed package selection takes effect at the next explicit
 setup/packages/upgrade; configuration-only apply does not fetch that tool.

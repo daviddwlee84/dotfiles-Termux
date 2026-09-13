@@ -78,6 +78,16 @@ class HostTests(unittest.TestCase):
     def test_serial_before_and_after_subcommand(self):
         for command in (["--serial", "one", "setup"], ["setup", "--serial", "one"]):
             self.assertEqual(host.parser().parse_args(command).serial, "one")
+
+    def test_setup_accepts_dev_and_rejects_unknown_tools_before_device_access(self):
+        with mock.patch.object(host, "list_devices", return_value=[{"serial": "one", "state": "device"}]), \
+             mock.patch.object(host, "setup") as setup:
+            self.assertEqual(host.main(["setup", "--with", "herdr,dev"]), 0)
+            self.assertEqual(setup.call_args.args[1].with_tools, "herdr,dev")
+        with mock.patch.object(host, "list_devices", side_effect=AssertionError("no device access")), \
+             contextlib.redirect_stderr(io.StringIO()):
+            for value in ("dev,unknown", "dev,", ",dev", "dev,,herdr"):
+                self.assertEqual(host.main(["setup", "--with", value]), 1)
         args = host.parser().parse_args(["ssh", "--serial", "one", "--", "printf", "$HOME; touch nope"])
         self.assertEqual(args.command, ["--", "printf", "$HOME; touch nope"])
 

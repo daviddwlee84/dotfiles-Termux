@@ -3,3 +3,5 @@
 pi|any|0.85.1|https://registry.npmjs.org/@earendil-works/pi-coding-agent/-/pi-coding-agent-0.85.1.tgz|1f498729649bdce647d1160993b4d92bf3c614cc819213bee2f91dd34f2a7af4|npm|-|6986356
 herdr|aarch64|v0.9.0|https://github.com/herdrdev/herdr/releases/download/v0.9.0/herdr-linux-aarch64|9c8db20fb7e7427b138d5367113f1621ffd319f2f65d6f009e2594029115f0d2|raw|-|22697240
 codex|aarch64|rust-v0.153.4|https://github.com/openai/codex/releases/download/rust-v0.153.4/codex-package-aarch64-unknown-linux-musl.tar.gz|fc395cb043a1093ab0db34f44aba3199bfaa9ce640cd9be7fd588f44b0da64a4|tar.gz|bin/codex|117238842
+# dev-cli asset inspected 2026-09-13: static AArch64 ELF; Android runtime unverified.
+dev|aarch64|v0.2.33|https://github.com/daviddwlee84/dev-cli/releases/download/v0.2.33/dev-cli_v0.2.33_linux_arm64.tar.gz|4293b3f61626cf028e0ca01535578212145578f92431ac1f8a807e6df6b5bd63|tar.gz|dev|10716204

@@ -11,6 +11,7 @@ for the exact completed and pending checks.
 | Node.js LTS and npm | Official Termux packages | Runtime for Pi |
 | Pi | Maintained `@earendil-works/pi-coding-agent` npm package | Native default, controlled by `installCodingAgents` |
 | Herdr | Pinned upstream Linux static binary | Explicit native experiment |
+| dev-cli (`dev`) | Pinned v0.2.33 upstream Linux ARM64 static binary | Opt-in with `--with dev`; Android runtime unverified |
 | Codex | Complete pinned official Linux-musl package and companions | Installed on the first device; normal sandbox blocked there |
 | Claude Code | Official Linux installer inside an optional PRoot distro | Guide only; no native installer in this repo |
 | Gemini CLI, OpenCode, OMP | Future compatibility work | No automatic installer |
@@ -55,6 +56,54 @@ commands, explicitly synchronize packages and install them in Termux:
 ```sh
 pkg update && pkg upgrade -y && pkg install -y termux-api
 ```
+
+## dev-cli
+
+Install our repository/task CLI together with Herdr 0.9.0:
+
+```sh
+# On the computer, from this standalone clone:
+just setup --with herdr,dev
+# From dotfiles-all, the equivalent is: just termux-setup --with herdr,dev
+
+# Or inside the Termux clone:
+bash bootstrap.sh packages --with herdr,dev
+```
+
+`--with` replaces the saved optional selection. Include `codex` as well if
+you want to retain that selection: `--with herdr,codex,dev`. Omit `--with`
+on later runs to retain all saved choices. These tools remain opt-in; a
+plain fresh setup does not install them.
+
+The installer verifies the dev-cli v0.2.33 archive's size and SHA-256,
+extracts its `dev` member, checks native `--version`, then installs
+`~/.local/bin/dev`. Existing commands are preserved, including other versions;
+setup/packages/upgrade do not replace existing optional binaries.
+
+On **2026-09-13**, the downloaded archive matched the upstream release
+metadata. Its executable was an AArch64 ELF with no dynamic interpreter or
+dynamic section. This is an asset inspection result; Android execution,
+SQLite state, Git/worktree operations and Herdr integration still need a
+device test. Sources: [release](https://github.com/daviddwlee84/dev-cli/releases/tag/v0.2.33),
+[static build workflow](https://github.com/daviddwlee84/dev-cli/blob/v0.2.33/.github/workflows/release.yml).
+
+Open a new Bash shell after setup. Interactive shells load `dev shell-init bash`
+for parent-directory navigation and `dev completion bash` for tab completion.
+Shell startup performs no installation. Keep Termux's `$TMPDIR` pointing at
+`$PREFIX/tmp`, since navigation uses private temporary files. Verify:
+
+```sh
+herdr --version
+dev --version
+type dev
+complete -p dev
+dev config path
+```
+
+Use `dev config init --help` to set up repository scan roots for this device,
+then inspect `dev doctor`. Account credentials and desktop dev configuration
+are not part of this setup. Test repository navigation in a scratch project
+before relying on task/worktree or Herdr operations on Android.
 
 ## Native Herdr and Codex experiments
 

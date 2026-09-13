@@ -197,6 +197,38 @@ class TargetTests(unittest.TestCase):
         self.assertFalse((self.home / ".bashrc").exists())
         self.assertEqual((self.root / "packages").read_text().splitlines(), ["update -y", "upgrade -y"])
 
+    def test_dev_selection_persists_and_apply_never_installs(self):
+        self.write_command("herdr", 'printf "herdr 0.9.0\\n"\n')
+        self.write_command("dev", 'printf "dev version v0.2.33\\n"\n')
+        self.configure("--with", "herdr,dev")
+        self.assertIn("optionalTools=herdr,dev", self.bootstrap("doctor"))
+        (self.root / "packages").unlink()
+        self.bootstrap("apply")
+        self.assertFalse((self.root / "packages").exists())
+        self.bootstrap("packages")
+        self.assertIn("optionalTools=herdr,dev", self.bootstrap("doctor"))
+
+    def test_dev_shell_integration_is_interactive_only_and_loaded_once(self):
+        self.env["TERM"] = "dumb"
+        self.env.pop("DOTFILES_TERMUX_SHELL_LOADED", None)
+        self.write_command("dev", '''printf '%s\\n' "$*" >> "$DOTFILES_TEST_ROOT/dev-calls"
+case "$*" in
+    'shell-init bash') printf '%s\\n' 'dev() { builtin cd -- "$HOME/project with spaces"; }' ;;
+    'completion bash') printf '%s\\n' 'complete -W "status repo" dev' ;;
+    *) exit 1 ;;
+esac
+''')
+        (self.home / "project with spaces").mkdir()
+        shell = str(REPO / "home/dot_config/dotfiles-termux/shell.bash")
+        self.run_command([BASH, "--noprofile", "--norc", "-c", 'source "$1"', "_", shell])
+        self.assertFalse((self.root / "dev-calls").exists())
+        output = self.run_command([BASH, "--noprofile", "--norc", "-ic",
+                                   'source "$1"; source "$1"; dev; pwd; complete -p dev', "_", shell])
+        self.assertIn(str(self.home / "project with spaces"), output)
+        self.assertIn('complete -W', output)
+        self.assertEqual((self.root / "dev-calls").read_text().splitlines(),
+                         ["shell-init bash", "completion bash"])
+
     def test_reapply_preserves_shell_seeds_local_overrides_and_boot_scripts(self):
         (self.home / ".bashrc").write_text("export PERSONAL=yes\n")
         (self.home / ".bash_profile").write_text("# existing login\n")
@@ -229,7 +261,7 @@ class TargetTests(unittest.TestCase):
                 "--promptBool", "Start SSH with Termux Boot=false",
                 "--promptBool", "Acquire wake lock at boot=false",
                 "--promptBool", "Install coding agents (Pi)=false",
-                "--promptString", "Optional tools (herdr,codex or empty)="]
+                "--promptString", "Optional tools (herdr,codex,dev or empty)="]
         self.run_command(args)
         (self.root / "packages").unlink()
         self.bootstrap("apply")

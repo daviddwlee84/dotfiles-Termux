@@ -1,11 +1,13 @@
 """Exercise optional asset failures in a private native-environment fixture."""
 import hashlib
+import io
 import os
 from pathlib import Path
 import shlex
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
 import unittest
 
@@ -60,12 +62,48 @@ class ToolTests(unittest.TestCase):
         path.chmod(0o755)
         return path
 
-    def lock(self, digest=None, size=None):
+    def lock(self, digest=None, size=None, tool="herdr", format="raw", member="-"):
         data = self.payload.read_bytes()
         digest = digest or hashlib.sha256(data).hexdigest()
         size = size if size is not None else len(data)
         (self.repo / "config/assets.lock").write_text(
-            f"herdr|aarch64|v1|https://example.invalid/herdr|{digest}|raw|-|{size}\n")
+            f"{tool}|aarch64|v1|https://example.invalid/{tool}|{digest}|{format}|{member}|{size}\n")
+
+    def dev_archive(self, body=b"#!/bin/sh\nprintf 'dev version v1\\n'\n", member="dev"):
+        with tarfile.open(self.payload, "w:gz") as archive:
+            entry = tarfile.TarInfo(member)
+            entry.size = len(body)
+            archive.addfile(entry, io.BytesIO(body))
+        self.lock(tool="dev", format="tar.gz", member="dev")
+
+    def test_dev_archive_installs_named_binary_and_preserves_rerun(self):
+        self.dev_archive()
+        result = self.run_tool("install", "dev")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        binary = self.home / ".local/bin/dev"
+        original = binary.read_bytes()
+        self.assertTrue(os.access(binary, os.X_OK))
+        self.payload.write_text("not an archive")
+        result = self.run_tool("install", "dev")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(binary.read_bytes(), original)
+        self.assertIn("launch-only:v1", (self.home / ".local/state/dotfiles-termux/tools/dev.status").read_text())
+
+    def test_dev_invalid_archives_and_failed_launch_leave_no_binary(self):
+        for member, body in (("wrong-member", b"unused"), ("dev", b"#!/bin/sh\nexit 7\n")):
+            with self.subTest(member=member):
+                self.dev_archive(body, member)
+                result = self.run_tool("install", "dev")
+                self.assertNotEqual(result.returncode, 0)
+                self.assertFalse((self.home / ".local/bin/dev").exists())
+
+    def test_dev_hash_failure_never_executes_candidate(self):
+        self.dev_archive(b'#!/bin/sh\ntouch "$HOME/executed"\n')
+        self.lock(digest="0" * 64, tool="dev", format="tar.gz", member="dev")
+        result = self.run_tool("install", "dev")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse((self.home / "executed").exists())
+        self.assertFalse((self.home / ".local/bin/dev").exists())
 
     def run_tool(self, *args, env=None):
         return subprocess.run([str(self.prefix / "bin/bash"), str(self.repo / "scripts/tools.sh"), *args],

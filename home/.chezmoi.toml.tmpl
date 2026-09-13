@@ -27,7 +27,7 @@
 {{- $boot = promptBoolOnce . "installTermuxBoot" "Start SSH with Termux Boot" true -}}
 {{- $wake = promptBoolOnce . "termuxWakeLock" "Acquire wake lock at boot" false -}}
 {{- $agents = promptBoolOnce . "installCodingAgents" "Install coding agents (Pi)" true -}}
-{{- $tools = promptStringOnce . "optionalTools" "Optional tools (herdr,codex or empty)" "" -}}
+{{- $tools = promptStringOnce . "optionalTools" "Optional tools (herdr,codex,dev or empty)" "" -}}
 {{- end -}}
 {{- $validated := output (joinPath $prefix "bin" "bash") (joinPath .chezmoi.workingTree "scripts" "guard.sh") (toString $ssh) $mode $port (toString $boot) (toString $wake) (toString $agents) $tools -}}
 {{- $_ := set $data "installSshServer" $ssh -}}

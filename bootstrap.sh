@@ -6,7 +6,7 @@ for argument in "$@"; do
         printf '%s\n' 'bash bootstrap.sh [setup|apply|update|packages|upgrade|doctor] [--non-interactive] [--dry-run]' \
             '  --install-ssh-server true|false --ssh-mode lan|adb --ssh-port 8022' \
             '  --install-termux-boot true|false --termux-wake-lock true|false' \
-            '  --install-coding-agents true|false --with herdr,codex --authorized-key-file FILE' \
+            '  --install-coding-agents true|false --with herdr,codex,dev --authorized-key-file FILE' \
             'setup/packages/upgrade synchronize Termux packages; apply/update change configuration only.'
         exit 0
     fi
@@ -17,7 +17,7 @@ if [[ -f $BASE/scripts/manage.sh && -f $BASE/.chezmoiroot ]]; then
 fi
 for argument in "$@"; do
     case "$argument" in
-        --help|-h) printf '%s\n' 'bash bootstrap.sh [--non-interactive] [--ssh-mode lan|adb] [--ssh-port PORT] [--with herdr,codex]'; exit 0 ;;
+        --help|-h) printf '%s\n' 'bash bootstrap.sh [--non-interactive] [--ssh-mode lan|adb] [--ssh-port PORT] [--with herdr,codex,dev]'; exit 0 ;;
         --dry-run) printf '%s\n' 'Would validate native Termux, synchronize packages, and obtain dotfiles-Termux.'; exit 0 ;;
     esac
 done
@@ -33,7 +33,7 @@ validate_arguments() {
                     --ssh-mode) [[ $value == lan || $value == adb ]] || return 1 ;;
                     --ssh-port) [[ $value =~ ^[0-9]{1,5}$ ]] || return 1; ((10#$value >= 1024 && 10#$value <= 65535)) || return 1 ;;
                     --install-*|--termux-wake-lock) [[ $value == true || $value == false ]] || return 1 ;;
-                    --with) [[ -z $value || $value =~ ^(herdr|codex)(,(herdr|codex))*$ ]] || return 1 ;;
+                    --with) [[ -z $value || $value =~ ^(herdr|codex|dev)(,(herdr|codex|dev))*$ ]] || return 1 ;;
                     --authorized-key-file) [[ -f $value && ! -L $value ]] || return 1 ;;
                 esac
                 shift 2 ;;
