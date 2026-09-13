@@ -9,7 +9,7 @@ experimental repository; ARM64 is the first runtime target.
 
 New setups use native zsh with a small Oh My Zsh configuration, autosuggestions,
 syntax highlighting and Starship. Bash remains available for management scripts.
-The baseline includes chezmoi, Git, Vim, tmux, Python, uv/uvx, Node.js and Pi. Public-key SSH listens on port 8022;
+The baseline includes chezmoi, Git, lazygit, Yazi, Vim, tmux, Python, uv/uvx, Node.js and Pi. Public-key SSH listens on port 8022;
 Termux:Boot integration is enabled and wake-lock is off. Herdr and Codex are
 explicit native experiments (`--with herdr,codex`). Our dev-cli (`dev`) is also
 opt-in: use `--with herdr,dev` for Herdr 0.9.0 and dev-cli 0.2.36. Claude Code has a separate
@@ -79,7 +79,10 @@ and the seed-preserving Herdr config remain locally editable. See
 
 ## Shell helpers and Python
 
-Both shells provide `abspath`, `source-rc` / `reload`, and `chezmoi-cd`.
+Both shells provide `abspath`, `source-rc` / `reload`, `chezmoi-cd`, `lg` (lazygit),
+and `y` (Yazi, changing the shell directory on exit). `lazygit` and `yazi` come
+from `pkg`; existing installations receive them with `bash bootstrap.sh packages`
+after updating the clone. Run `source-rc` or open a new shell for the shortcuts.
 The saved `primaryShell` selects `bash` or `zsh`; existing installations keep
 what they used until explicitly changed. To switch or return to Bash:
 

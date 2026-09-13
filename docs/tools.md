@@ -1,13 +1,14 @@
 # Tools and compatibility
 
-The baseline stays in native Termux. Package availability and the compatibility
-evidence below were reviewed on **2026-09-09**. The first Android device now
+The baseline stays in native Termux. The initial package availability and compatibility
+review was on **2026-09-09**; later additions are dated below. The first Android device now
 has partial installation/launch results; see the [verification record](verification.md#current-verification-record-2026-09-09)
 for the exact completed and pending checks.
 
 | Tool | Installation path | Support level here |
 | --- | --- | --- |
 | chezmoi, Bash, Starship, Git, Vim, tmux, Python, uv/uvx and build utilities | Official Termux packages | Native baseline; device acceptance still required |
+| lazygit and Yazi | Official Termux packages | Native baseline; `lg` alias and `y` directory-changing wrapper |
 | Node.js LTS and npm | Official Termux packages | Runtime for Pi |
 | Pi | Maintained `@earendil-works/pi-coding-agent` npm package | Native default, controlled by `installCodingAgents` |
 | Herdr | Pinned upstream Linux static binary | Explicit native experiment |
@@ -21,6 +22,8 @@ release assets when a native package exists. The official package recipes
 include [chezmoi](https://github.com/termux/termux-packages/blob/master/packages/chezmoi/build.sh)
 and [Starship](https://github.com/termux/termux-packages/blob/master/packages/starship/build.sh).
 Neovim is also available as a separate Termux package if you prefer it.
+
+Checked **2026-09-14**: lazygit and Yazi are installed through the official [lazygit](https://github.com/termux/termux-packages/blob/master/packages/lazygit/build.sh) and [Yazi](https://github.com/termux/termux-packages/blob/master/packages/yazi/build.sh) packages. Existing clones should update and run `bash bootstrap.sh packages`; plain chezmoi apply updates shortcuts only. See [shell helpers](shell.md#interactive-features-and-helpers).
 
 ## Native Python and uv
 

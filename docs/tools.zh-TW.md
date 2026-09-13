@@ -1,12 +1,13 @@
 # 工具與相容性
 
-基礎環境維持原生 Termux。以下套件與相容性資料於 **2026-09-09** 查核；
+基礎環境維持原生 Termux。初始套件與相容性資料於 **2026-09-09** 查核，後續新增項目於下方標示日期；
 第一台 Android 裝置已有部分安裝／啟動結果；已完成與待驗證項目請見
 [驗證紀錄](verification.md)。
 
 | 工具 | 安裝方式 | 此 repo 的支援層級 |
 | --- | --- | --- |
 | chezmoi、Bash、Starship、Git、Vim、tmux、Python、uv/uvx 與編譯工具 | 官方 Termux 套件 | 原生基礎；仍需裝置驗收 |
+| lazygit 與 Yazi | 官方 Termux 套件 | 原生基礎；提供 `lg` alias 與能切換目錄的 `y` wrapper |
 | Node.js LTS 與 npm | 官方 Termux 套件 | Pi runtime |
 | Pi | 維護中的 `@earendil-works/pi-coding-agent` npm 套件 | 原生預設，由 `installCodingAgents` 控制 |
 | Herdr | 固定版本上游 Linux static binary | 明確選用的原生實驗 |
@@ -20,6 +21,8 @@ release asset。官方 recipes 包含
 [chezmoi](https://github.com/termux/termux-packages/blob/master/packages/chezmoi/build.sh)
 與 [Starship](https://github.com/termux/termux-packages/blob/master/packages/starship/build.sh)。
 偏好 Neovim 時，也可以另外安裝其 Termux 套件。
+
+**2026-09-14 查核**：lazygit 與 Yazi 使用官方 [lazygit](https://github.com/termux/termux-packages/blob/master/packages/lazygit/build.sh) 與 [Yazi](https://github.com/termux/termux-packages/blob/master/packages/yazi/build.sh) 套件。既有 clone 更新後執行 `bash bootstrap.sh packages`；單純 chezmoi apply 只更新捷徑。參考 [shell helpers](shell.zh-TW.md#helpers)。
 
 ## 原生 Python 與 uv
 

@@ -30,6 +30,27 @@ function chezmoi-cd {
     builtin cd -- "$destination" || return
 }
 
+# Yazi's cwd-file protocol; keep arguments and the program's exit status intact.
+_dotfiles_termux_y() {
+    local cwd_file cwd='' exit_code=0
+    cwd_file=$(mktemp "${TMPDIR:-/tmp}/yazi-cwd.XXXXXX") || return
+    command yazi "$@" --cwd-file="$cwd_file" || exit_code=$?
+    if [ "$exit_code" -eq 0 ]; then
+        # Yazi writes the path without a trailing newline. Read until EOF.
+        IFS= read -r -d '' cwd <"$cwd_file" || :
+        if [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+            builtin cd -- "$cwd" || exit_code=$?
+        fi
+    fi
+    rm -f -- "$cwd_file"
+    return "$exit_code"
+}
+
+# Preserve a pre-existing user shortcut; the managed implementation still reloads.
+if ! command -v y >/dev/null 2>&1; then
+    function y { _dotfiles_termux_y "$@"; }
+fi
+
 # Regenerate only when the binary path or modification time changes.
 _dotfiles_termux_dev_init() {
     local kind=$1 binary=$2 cache script staged identity recorded
@@ -57,5 +78,8 @@ _dotfiles_termux_dev_init() {
 }
 
 case $- in
-    *i*) alias ll='ls -al'; alias g='git'; alias reload='source-rc' ;;
+    *i*)
+        alias ll='ls -al'; alias g='git'; alias reload='source-rc'
+        command -v lg >/dev/null 2>&1 || alias lg='lazygit'
+        ;;
 esac

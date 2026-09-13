@@ -37,6 +37,10 @@ Bash history is not converted. Zsh glob and word-splitting rules differ from Bas
 run Bash scripts with `bash script.sh`.
 
 ```sh
+lg                              # open lazygit in the current repository
+y                               # browse files; q returns to the selected directory
+y "$HOME"                       # start Yazi at a chosen directory
+yazi                            # direct launch; does not change the parent shell
 abspath                         # logical current directory, like pwd
 abspath 'file with spaces' ../x  # absolute paths; existence is not required
 abspath -r link                  # resolve symlinks; target must exist
@@ -46,6 +50,14 @@ source-rc                        # reload the current shell's rc and helpers
 reload                           # alias for source-rc
 chezmoi-cd                       # enter the effective chezmoi source (home/)
 ```
+
+Existing `lg` or `y` commands, aliases and functions are preserved. Otherwise,
+`lg` is an alias for `lazygit`. The `y` wrapper forwards arguments to Yazi and
+changes directory only after a successful exit with a returned directory. `Q`
+leaves the shell directory unchanged. Temporary cwd files are removed after exit;
+failed launches preserve the current directory and return the failure status.
+Both tools are native `pkg` baseline packages; no downloads run on shell startup.
+See the [official Yazi wrapper](https://yazi-rs.github.io/docs/quick-start/#shell-wrapper).
 
 The rc files retain existing content and append a managed block. Bash's existing
 login forwarding remains intact; zsh login configuration supplies the shared

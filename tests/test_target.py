@@ -276,6 +276,7 @@ class TargetTests(unittest.TestCase):
         calls = (self.root / "packages").read_text().splitlines()
         self.assertEqual(calls[:2], ["update -y", "upgrade -y"])
         self.assertTrue(calls[2].startswith("install -y "))
+        self.assertTrue({"lazygit", "yazi"}.issubset(calls[2].split()))
         self.assertIn("pending-key", output)
         config = (self.home / ".config/dotfiles-termux/sshd_config").read_text()
         self.assertIn("ListenAddress 0.0.0.0", config)

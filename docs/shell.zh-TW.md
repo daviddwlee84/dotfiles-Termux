@@ -32,6 +32,10 @@ zsh-syntax-highlighting、官方 zsh-completions、快取的 dev 補全與既有
 與變數拆詞規則不同；需要 Bash 語意的腳本用 `bash script.sh` 執行。
 
 ```sh
+lg                              # 在目前 repository 開啟 lazygit
+y                               # 瀏覽檔案；q 離開後切換到所選目錄
+y "$HOME"                       # 從指定目錄開啟 Yazi
+yazi                            # 直接啟動，不改變外層 shell 目錄
 abspath                         # logical 目前目錄，和 pwd 相同
 abspath 'file with spaces' ../x  # 絕對路徑；不要求檔案已存在
 abspath -r link                  # 解析 symlink；目標必須存在
@@ -41,6 +45,12 @@ source-rc                        # 重新載入目前 shell 的 rc 與 helpers
 reload                           # source-rc 的 alias
 chezmoi-cd                       # 進入有效的 chezmoi source（home/）
 ```
+
+既有的 `lg`／`y` 指令、alias 或 function 會保留。未自訂時，
+`lg` 是 `lazygit` 的 alias；`y` 會把參數傳給 Yazi，成功離開且有回傳目錄時才切換
+shell 目錄。按 `Q` 離開會保留原目錄；暫存 cwd 檔案會在結束後移除，啟動失敗時
+保留目前目錄並回傳錯誤碼。兩者都納入原生 `pkg` 基礎套件，shell 啟動不下載。
+參考 [Yazi 官方 wrapper](https://yazi-rs.github.io/docs/quick-start/#shell-wrapper)。
 
 rc 保留原內容，再加入管理區塊。Bash 既有的 login forwarding 不變；zsh login
 設定載入共用 PATH/helpers，不載入互動 plugins。重複 source 不會重複包裝 plugins

@@ -79,6 +79,61 @@ abspath -- -filename
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(result.stdout.strip(), str(destination))
 
+    def test_yazi_changes_directory_and_forwards_arguments_in_both_shells(self):
+        destination = self.home / 'chosen directory'
+        destination.mkdir()
+        program = self.bin / 'yazi'
+        program.write_text('''#!/bin/sh
+printf '%s\\n' "$1" > "$HOME/yazi-argument"
+for argument in "$@"; do
+    case "$argument" in --cwd-file=*) output=${argument#--cwd-file=};; esac
+done
+printf '%s' "$HOME/chosen directory" > "$output"
+printf '%s' "$output" > "$HOME/yazi-cwd-file"
+exit "${YAZI_TEST_EXIT:-0}"
+''')
+        program.chmod(0o755)
+        for kind in ('bash', 'zsh'):
+            with self.subTest(shell=kind):
+                result = self.run_shell(kind, '''source "$DOTFILES_TERMUX_CONFIG_DIR/common.sh"
+y 'starting directory'
+pwd
+''')
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.stdout.strip(), str(destination))
+                self.assertEqual((self.home / 'yazi-argument').read_text(), 'starting directory\n')
+                self.assertFalse(Path((self.home / 'yazi-cwd-file').read_text()).exists())
+                result = self.run_shell(kind, '''source "$DOTFILES_TERMUX_CONFIG_DIR/common.sh"
+export YAZI_TEST_EXIT=7
+y 'starting directory'
+exit_code=$?
+pwd
+exit "$exit_code"
+''')
+                self.assertEqual(result.returncode, 7, result.stderr)
+                self.assertEqual(result.stdout.strip(), str(self.home))
+                self.assertFalse(Path((self.home / 'yazi-cwd-file').read_text()).exists())
+
+    def test_lg_alias_is_available_in_both_interactive_shells(self):
+        for kind in ('bash', 'zsh'):
+            result = self.run_shell(kind, 'source "$DOTFILES_TERMUX_CONFIG_DIR/common.sh"\nalias lg', interactive=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn('lg=', result.stdout)
+            self.assertIn('lazygit', result.stdout)
+
+    def test_existing_git_and_yazi_shortcuts_are_preserved(self):
+        for kind in ('bash', 'zsh'):
+            result = self.run_shell(kind, '''alias lg='user-git'
+function y { printf 'user-yazi\\n'; }
+source "$DOTFILES_TERMUX_CONFIG_DIR/common.sh"
+source "$DOTFILES_TERMUX_CONFIG_DIR/common.sh"
+alias lg
+y
+''', interactive=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn('user-git', result.stdout)
+            self.assertIn('user-yazi', result.stdout)
+
     def test_reload_uses_actual_interpreter_and_redefines_helpers(self):
         for kind in ('bash', 'zsh'):
             rc = self.home / ('.bashrc' if kind == 'bash' else '.zshrc')

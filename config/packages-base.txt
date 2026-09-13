@@ -5,6 +5,7 @@ which
 curl
 file
 git
+lazygit
 chezmoi
 just
 openssh
@@ -17,6 +18,7 @@ less
 ripgrep
 fd
 fzf
+yazi
 rsync
 python
 uv
