@@ -104,6 +104,37 @@ Use `--backlog` for a research note; its template is
 `backlog/.backlog-doc.md.template`. New user documentation needs English/zh-TW
 pairs and both navigation entries in `mkdocs.yml`.
 
+## Shell and uv follow-up — 2026-09-13
+
+The ARM64 Android 15 tablet now selects native zsh 5.9.2 for new Termux/SSH
+logins. The saved selection and actual Termux shell override agree. Existing
+sessions were retained. Its older `chsh` needs a relative shell name; the
+selector uses the form supported by both old and current Termux versions.
+
+- Thirty interleaved warm samples per shell/location passed the performance
+  gates. With the same managed helpers, zsh median was 186–190 ms versus Bash
+  116–119 ms; zsh P95 was 204–208 ms and cold private caches took 692–694 ms.
+  See [methodology and reproduction](shell.md#startup-measurements).
+- A fresh SSH session loaded zsh, Starship, syntax highlighting and helpers.
+  Typing `dev sta` then Tab displayed start/stats/status completion choices.
+  The `dev` and `uv` completion functions were registered.
+- A separate Herdr server using the device config created a zsh pane, ran the
+  helpers and uv, confirmed dev completion, and split successfully. Its state
+  was removed. Herdr had added an onboarding field to its seed; a backed-up,
+  explicit one-field edit selected zsh while retaining onboarding.
+- uv 0.12.13 (`aarch64-linux-android`) created a Python 3.14.6 venv, installed
+  `packaging==25.0` from PyPI, and ran it through `uv run --no-project --with`.
+  The native config uses system Python and copy mode; later user edits survive.
+- Two consecutive chezmoi applies completed with no remaining managed-file
+  differences. Bash remains the interpreter for management/Boot scripts.
+
+The initial desktop suite passed 110 tests locally. CI then exposed an older
+Bash EXIT-trap lifetime difference and a fake OMZ fixture that omitted the real
+framework's `compinit -i`; both were corrected without disabling completion audits.
+The [Checks workflow](https://github.com/daviddwlee84/dotfiles-Termux/actions/workflows/check.yml)
+records the final revision's macOS/Ubuntu results. Reboot/background and fresh
+ADB pairing remain separate gates; saved USB SSH pairing was reused here.
+
 ## Herdr and dev-cli follow-up — 2026-09-13
 
 On the same ARM64 Android 15 device:

@@ -100,7 +100,9 @@ printf '%s\n' "$RELOAD_COUNT"
         (assets / 'assets.sh').write_text(f'DOTFILES_TERMUX_OMZ={shlex.quote(str(assets / "omz"))}\n'
                                         f'DOTFILES_TERMUX_AUTOSUGGEST={shlex.quote(str(assets / "suggest"))}\n'
                                         f'DOTFILES_TERMUX_HIGHLIGHT={shlex.quote(str(assets / "highlight"))}\n')
-        (assets / 'omz/oh-my-zsh.sh').write_text('OMZ_LOADS=$(( ${OMZ_LOADS:-0} + 1 ))\nautoload -Uz compinit\ncompinit -d "$ZSH_COMPDUMP"\n')
+        # Match OMZ: audit and ignore insecure host completion directories,
+        # rather than prompting on a non-TTY CI runner (never use compinit -u).
+        (assets / 'omz/oh-my-zsh.sh').write_text('OMZ_LOADS=$(( ${OMZ_LOADS:-0} + 1 ))\nautoload -Uz compinit\ncompinit -i -d "$ZSH_COMPDUMP"\n')
         (assets / 'suggest/zsh-autosuggestions.zsh').write_text('SUGGEST_LOADS=$(( ${SUGGEST_LOADS:-0} + 1 ))\n')
         (assets / 'highlight/zsh-syntax-highlighting.zsh').write_text('HIGHLIGHT_LOADS=$(( ${HIGHLIGHT_LOADS:-0} + 1 ))\n_zsh_highlight() { :; }\n')
         dev = self.bin / 'dev'

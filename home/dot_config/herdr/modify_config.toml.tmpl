@@ -11,4 +11,4 @@ fi
 exec python3 '{{ .chezmoi.workingTree | replace "'" "'\\''" }}/scripts/herdr-shell.py' render \
     '{{ .chezmoi.homeDir | replace "'" "'\\''" }}/.config/herdr/config.toml' \
     '{{ .chezmoi.homeDir | replace "'" "'\\''" }}/.local/state/dotfiles-termux' \
-    '{{ .termuxPrefix | replace "'" "'\\''" }}' '{{ $shell }}'
+    '{{ .termuxPrefix | replace "'" "'\\''" }}' '{{ $shell | replace "'" "'\\''" }}'

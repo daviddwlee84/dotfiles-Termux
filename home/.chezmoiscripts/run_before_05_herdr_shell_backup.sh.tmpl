@@ -2,5 +2,5 @@
 set -euo pipefail
 {{ if contains "herdr" .optionalTools -}}
 exec '{{ .termuxPrefix | replace "'" "'\\''" }}/bin/bash' '{{ .chezmoi.workingTree | replace "'" "'\\''" }}/scripts/shell.sh' \
-    backup-herdr '{{ get . "primaryShell" | default "bash" }}'
+    backup-herdr '{{ get . "primaryShell" | default "bash" | replace "'" "'\\''" }}'
 {{ end -}}

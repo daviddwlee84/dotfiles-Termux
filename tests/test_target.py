@@ -2,6 +2,8 @@
 
 import os
 import json
+import re
+import shlex
 from pathlib import Path
 import shutil
 import socket
@@ -201,6 +203,16 @@ class TargetTests(unittest.TestCase):
         self.bootstrap('apply', '--primary-shell', 'zsh', expected=1)
         self.assertFalse((self.home / '.termux/shell').exists())
         self.assertEqual(uv_config.read_text(), 'python-downloads = "manual"\n')
+
+    def test_invalid_shell_data_is_rejected_without_execution(self):
+        self.configure()
+        sentinel = self.home / 'UNEXPECTED'
+        value = "zsh'; touch " + shlex.quote(str(sentinel)) + "; : '"
+        changed = re.sub(r'(?m)^\s*primaryShell\s*=.*$',
+                         lambda _: 'primaryShell = ' + json.dumps(value), self.config.read_text())
+        self.config.write_text(changed)
+        self.bootstrap('apply', expected=1)
+        self.assertFalse(sentinel.exists())
 
     def seed_zsh(self):
         self.write_command('zsh', 'exit 0\n')

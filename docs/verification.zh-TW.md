@@ -91,6 +91,31 @@ bash scripts/todo-kanban.sh --validate-only TODO.md
 需要研究筆記時加上 `--backlog`，其模板位於 `backlog/.backlog-doc.md.template`。
 新增使用者文件需維持 English/zh-TW 成對，並更新 `mkdocs.yml` navigation 與翻譯。
 
+## Shell 與 uv 後續驗證 — 2026-09-13
+
+ARM64 Android 15 平板已選用原生 zsh 5.9.2，保存值與 Termux 實際 shell override
+一致；新的 Termux／SSH login 使用 zsh，保留既有 sessions。裝置上的舊版 `chsh`
+需要相對名稱，selector 使用新舊版本皆支援的寫法。
+
+- 每種 shell／目錄交錯量測 30 次暖啟動，通過效能門檻。使用相同受管理 helpers
+  時，zsh 中位數 186–190 ms，Bash 116–119 ms；zsh P95 204–208 ms，冷快取
+  692–694 ms。[方法與重現方式](shell.md)見 Shell 文件。
+- 新 SSH session 載入 zsh、Starship、語法上色與 helpers；輸入 `dev sta` 再按
+  Tab，可看到 start/stats/status 選項，dev 與 uv 補全函式也正常註冊。
+- 使用裝置設定建立獨立 Herdr server，通過 zsh pane、helpers、uv、dev 補全
+  與 split，之後移除測試狀態。Herdr 曾在 seed 加入 onboarding 欄位，因此這次
+  明確備份後只修改 default_shell，保留 onboarding。
+- uv 0.12.13（`aarch64-linux-android`）成功建立 Python 3.14.6 venv、從 PyPI
+  安裝 `packaging==25.0`，也通過 `uv run --no-project --with`。預設使用系統
+  Python 與 copy 模式；後续本機設定仍會保留。
+- 連續兩次 chezmoi apply 後沒有受管理檔案差異。管理與 Boot 腳本仍由 Bash 執行。
+
+本機完整 suite 通過 110 項測試；CI 後來發現舊 Bash 的 EXIT trap 區域變數
+生命週期差異，以及 fake OMZ fixture 少了實際框架使用的 `compinit -i`，均已
+修正，沒有關閉補全安全檢查。最終版本的 macOS／Ubuntu 結果見
+[Checks workflow](https://github.com/daviddwlee84/dotfiles-Termux/actions/workflows/check.yml)。
+重開機／背景行為與全新 ADB pairing 仍是獨立驗證項目；這次重用既有 USB SSH 配對。
+
 ## Herdr 與 dev-cli 後續驗證 — 2026-09-13
 
 同一台 ARM64 Android 15 裝置的結果：
