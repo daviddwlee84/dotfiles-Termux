@@ -116,6 +116,27 @@ ARM64 Android 15 平板已選用原生 zsh 5.9.2，保存值與 Termux 實際 sh
 [Checks workflow](https://github.com/daviddwlee84/dotfiles-Termux/actions/workflows/check.yml)。
 重開機／背景行為與全新 ADB pairing 仍是獨立驗證項目；這次重用既有 USB SSH 配對。
 
+## 原生 dev 升級至 v0.2.35 — 2026-09-13
+
+ARM64 Android 15 裝置使用原生 Termux Go 1.27.1 與 Clang：
+
+- 發布前，self-update unit tests 與實際精簡 source build 均通過；有快取的
+  source build 耗時 15.9 秒，Git lookup 也通過。
+- [dev-cli v0.2.35](https://github.com/daviddwlee84/dev-cli/releases/tag/v0.2.35)
+  發布後，先讓隔離的開發版 binary 執行真正的 `dev upgrade`。它選用正式發布、
+  大小為 3,676,371 bytes 的 source archive，驗證 SHA-256，以原生 Go/Clang
+  及兩個 workers 編譯，確認候選版本後替換自身。下載、驗證與編譯在
+  **已有依賴及 build cache 的情況下約 11 秒完成**。
+- 驗證過的 v0.2.35 已安裝到 `~/.local/bin/dev`，並私有備份先前的原生 v0.2.33。
+  Git repository 導航成功，實際 TUI 可在 PTY 下顯示、按 `q` 正常離開；
+  `dev upgrade --check` 確認 v0.2.35 已是最新版。
+- 裝置 checkout 以 fast-forward 更新到固定 v0.2.35 的安裝設定，之後移除
+  暫時的測試 repository、binary 與狀態。
+
+版本鎖更新通過 111 項 desktop fixtures、獨立 installer 測試、雙語 strict docs
+與 secret checks；[macOS/Ubuntu CI](https://github.com/daviddwlee84/dotfiles-Termux/actions/runs/34751565943)
+也已通過。完整 task/worktree lifecycle 與已登入的 agent 使用仍各自驗證。
+
 ## Herdr 與 dev-cli 後續驗證 — 2026-09-13
 
 同一台 ARM64 Android 15 裝置的結果：

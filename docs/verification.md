@@ -135,6 +135,31 @@ The [Checks workflow](https://github.com/daviddwlee84/dotfiles-Termux/actions/wo
 records the final revision's macOS/Ubuntu results. Reboot/background and fresh
 ADB pairing remain separate gates; saved USB SSH pairing was reused here.
 
+## Native dev upgrade to v0.2.35 — 2026-09-13
+
+On the ARM64 Android 15 device with native Termux Go 1.27.1 and Clang:
+
+- The self-update unit tests and an actual compact-source build passed before
+  publication. The warm source build took 15.9 seconds and passed Git lookup.
+- After [dev-cli v0.2.35](https://github.com/daviddwlee84/dev-cli/releases/tag/v0.2.35)
+  was published, an isolated development binary ran the real `dev upgrade`.
+  It selected the published 3,676,371-byte source archive, verified SHA-256,
+  built with native Go/Clang and two workers, checked the candidate version,
+  and replaced itself. Download, verification and compilation took approximately
+  **11 seconds with existing dependency/build caches**.
+- The verified v0.2.35 binary was installed at `~/.local/bin/dev` with a private
+  recovery copy of the prior native v0.2.33 binary. Git repository navigation
+  passed, the actual TUI rendered under a PTY and quit normally with `q`, and
+  `dev upgrade --check` reported that v0.2.35 was already current.
+- The device checkout was updated by fast-forward to the v0.2.35 installation
+  pin. Temporary test repositories, binaries and state were removed afterward.
+
+The pin update passed 111 desktop fixtures, focused installer checks, strict
+bilingual documentation and secret checks. Its
+[macOS/Ubuntu CI](https://github.com/daviddwlee84/dotfiles-Termux/actions/runs/34751565943)
+passed. Full task/worktree lifecycle and authenticated agent use retain their
+separate verification scope.
+
 ## Herdr and dev-cli follow-up — 2026-09-13
 
 On the same ARM64 Android 15 device:
