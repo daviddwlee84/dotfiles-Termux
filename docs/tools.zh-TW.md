@@ -10,7 +10,7 @@
 | Node.js LTS 與 npm | 官方 Termux 套件 | Pi runtime |
 | Pi | 維護中的 `@earendil-works/pi-coding-agent` npm 套件 | 原生預設，由 `installCodingAgents` 控制 |
 | Herdr | 固定版本上游 Linux static binary | 明確選用的原生實驗 |
-| dev-cli（`dev`） | 固定 v0.2.35 原始碼，以 Termux Go/Clang 原生建置 | 以 `--with dev` 選用；必須使用 Android build |
+| dev-cli（`dev`） | 固定 v0.2.36 原始碼，以 Termux Go/Clang 原生建置 | 以 `--with dev` 選用；必須使用 Android build |
 | Codex | 完整固定版本官方 Linux-musl package 與 companions | 第一台裝置已安裝，但正常 sandbox 在該裝置失敗 |
 | Claude Code | 選用 PRoot distro 內的官方 Linux installer | 僅指南；repo 沒有原生 installer |
 | Gemini CLI、OpenCode、OMP | 未來相容性工作 | 不自動安裝 |
@@ -77,7 +77,7 @@ bash bootstrap.sh packages --with herdr,dev
 `--with herdr,codex,dev`；後續省略 `--with` 就會保留全部既有選擇。
 這些工具維持選用；全新環境只執行一般 setup 不會安裝它們。
 
-installer 驗證 dev-cli v0.2.35 **source archive** 的大小與 SHA-256，再使用
+installer 驗證 dev-cli v0.2.36 **source archive** 的大小與 SHA-256，再使用
 Termux 原生 Go/Clang、`GOOS=android` 建置 `~/.local/bin/dev`。第一次明確同步
 套件時會加入 `golang`（及其 Clang 依賴）；原始碼編譯與依賴下載會比直接下載
 binary 久。Go 沿用 source 的 `go.sum`，設定 `-mod=readonly`、
@@ -87,7 +87,7 @@ Linux v0.2.33 release 雖然能執行 `--version`，但在測試的 Android 15 �
 查找 Git 指令時，於 `syscall.faccessat2` 發生 `SIGSYS: bad system call`。
 Go 的 Android target 會避開這個被封鎖的呼叫，因此 static ELF 並不足以證明
 相容。參考[失敗紀錄與遷移方式](https://github.com/daviddwlee84/dotfiles-Termux/blob/main/pitfalls/dev-sigsys-faccessat2.md)、
-[固定版本 source](https://github.com/daviddwlee84/dev-cli/tree/v0.2.35)、
+[固定版本 source](https://github.com/daviddwlee84/dev-cli/tree/v0.2.36)、
 [Go 的 Android executable lookup](https://github.com/golang/go/blob/go1.27.1/src/internal/syscall/unix/eaccess.go)。
 
 既有指令仍會保留，setup/packages/upgrade 不會覆蓋已安裝的選用 binary。
@@ -100,6 +100,8 @@ source upgrade：驗證 release 的精簡 source archive，以原生 Go/Clang �
 升級時才會下載及編譯。舊版 v0.2.33/v0.2.34 binary 需先做一次
 [有 checksum 的原生修復](https://github.com/daviddwlee84/dev-cli#go-or-source)，
 才能使用這項升級功能。
+
+自 v0.2.36 起，原生 SSH onboarding 與 discovery cache 支援 Android 私有 app 儲存空間。在 SSH dashboard 按 `c` 探索 LAN、按 `n` 新增連線。設定與 state 請保留於 Termux 私有家目錄；Android 系統管理的 `/data` 不需要修復權限。既有安裝用 `dev upgrade` 取得這個修正。
 
 setup 後開啟新的 shell。Bash 與 zsh 各自載入原生的 `dev shell-init`，讓指令
 能切換目前 shell 的目錄，並快取產生的補全腳本。

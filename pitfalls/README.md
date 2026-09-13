@@ -99,6 +99,7 @@ if their original location stops being a natural reading flow.
 
 | Trap | Lives in | Why not here |
 |---|---|---|
+| `registry /data: ancestor has an untrusted owner`, `open /: permission denied`, `linkat` during native dev SSH setup/cache writes | [Native SSH setup fix](../docs/verification.md#native-ssh-setup-fix-2026-09-13) | Device evidence, the v0.2.36 fix and verification scope are recorded together |
 | `musl` asset still requests a loader; missing Android target mistaken for impossible execution | [Tool compatibility](../docs/tools.md) | Initial research correction; no device failure claimed |
 | ADB shell is not the Termux app user | [Setup](../docs/setup.md) | Pairing and fresh-shell/manual handoff belong in the setup guide |
 | Partial package upgrade leaves incompatible libraries | [Package updates](../docs/setup.md#configuration-and-package-updates) | Full sync is an installation invariant |

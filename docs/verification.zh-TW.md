@@ -116,6 +116,29 @@ ARM64 Android 15 平板已選用原生 zsh 5.9.2，保存值與 Termux 實際 sh
 [Checks workflow](https://github.com/daviddwlee84/dotfiles-Termux/actions/workflows/check.yml)。
 重開機／背景行為與全新 ADB pairing 仍是獨立驗證項目；這次重用既有 USB SSH 配對。
 
+## 原生 SSH setup 修正 — 2026-09-13
+
+ARM64 Android 15 裝置使用原生 Termux Go 1.27.1 與 Clang：
+
+- 原本 v0.2.35 的 SSH wizard 拒絕 Android 系統管理的 `/data`；discovery cache
+  也因 app sandbox 禁止從 `/` 開啟目錄及透過 hard link 發布檔案而失敗。
+- v0.2.36 修正會驗證 Termux 私有家目錄邊界、保留繼承的 SELinux／加密 metadata，
+  並用 `RENAME_NOREPLACE` 發布新檔案。沒有修改 Android 系統權限或安全政策。
+- 八個原生檔案系統／SSH domain test packages 與 SSH TUI adapter tests 均通過，
+  包含原生金鑰生成、cache 保存與標籤不符拒絕。Android 不允許建立 hard-link
+  攻擊 fixture 時會明確 skip；desktop 測試仍涵蓋那些案例。
+- 實際 Termux dashboard 成功審閱並套用 configuration-only 連線：初始化 SSH
+  config、建立 managed fragment 與 machine binding，通過原生有效設定驗證，
+  回報 `SSH setup: ready`，並在清單顯示為 managed 連線。
+
+正式發布後，實際執行 `dev upgrade --yes`，以有 checksum 的 3,687,265-byte
+source archive 將已安裝的 v0.2.35 升級至 v0.2.36。已有依賴與 build cache 時，
+下載及原生編譯共 **18.5 秒**。`dev --version` 與 `dev upgrade --check` 均確認
+v0.2.36，並保留 v0.2.35 的私有復原副本。
+
+這次驗證設定建立與原生檔案系統行為；實際連線尚未認證，也沒有向遠端主機
+安裝金鑰。
+
 ## 原生 dev 升級至 v0.2.35 — 2026-09-13
 
 ARM64 Android 15 裝置使用原生 Termux Go 1.27.1 與 Clang：

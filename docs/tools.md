@@ -11,7 +11,7 @@ for the exact completed and pending checks.
 | Node.js LTS and npm | Official Termux packages | Runtime for Pi |
 | Pi | Maintained `@earendil-works/pi-coding-agent` npm package | Native default, controlled by `installCodingAgents` |
 | Herdr | Pinned upstream Linux static binary | Explicit native experiment |
-| dev-cli (`dev`) | Pinned v0.2.35 source built with native Termux Go/Clang | Opt-in with `--with dev`; Android build required |
+| dev-cli (`dev`) | Pinned v0.2.36 source built with native Termux Go/Clang | Opt-in with `--with dev`; Android build required |
 | Codex | Complete pinned official Linux-musl package and companions | Installed on the first device; normal sandbox blocked there |
 | Claude Code | Official Linux installer inside an optional PRoot distro | Guide only; no native installer in this repo |
 | Gemini CLI, OpenCode, OMP | Future compatibility work | No automatic installer |
@@ -81,7 +81,7 @@ you want to retain that selection: `--with herdr,codex,dev`. Omit `--with`
 on later runs to retain all saved choices. These tools remain opt-in; a
 plain fresh setup does not install them.
 
-The installer verifies the dev-cli v0.2.35 **source archive** size and SHA-256,
+The installer verifies the dev-cli v0.2.36 **source archive** size and SHA-256,
 then builds `~/.local/bin/dev` with Termux's native Go/Clang and `GOOS=android`.
 The first explicit package sync adds `golang` (and its Clang dependency); source
 compilation and dependency downloads take longer than downloading a binary.
@@ -93,7 +93,7 @@ on the tested Android 15 device with `SIGSYS: bad system call` in
 `syscall.faccessat2`. Go's Android target avoids this blocked call. A static ELF
 alone is therefore insufficient. See the
 [observed failure and migration](https://github.com/daviddwlee84/dotfiles-Termux/blob/main/pitfalls/dev-sigsys-faccessat2.md).
-Sources: [versioned source](https://github.com/daviddwlee84/dev-cli/tree/v0.2.35),
+Sources: [versioned source](https://github.com/daviddwlee84/dev-cli/tree/v0.2.36),
 [Android-aware executable lookup](https://github.com/golang/go/blob/go1.27.1/src/internal/syscall/unix/eaccess.go).
 
 Existing commands are preserved, including other versions; setup/packages/upgrade
@@ -108,6 +108,8 @@ installed executable. Go/Clang still come from `pkg`; downloads and builds happe
 only during explicit upgrades. Older v0.2.33/v0.2.34 binaries need a one-time
 [checksummed native recovery](https://github.com/daviddwlee84/dev-cli#go-or-source)
 to gain this behavior.
+
+From v0.2.36, native SSH onboarding and discovery caches support Android's private app storage. In the SSH dashboard, press `c` for LAN discovery and `n` to add a connection. Keep config/state under Termux's private home; Android's system-owned `/data` directories do not need permission repair. Existing installations receive this fix with `dev upgrade`.
 
 Open a new shell after setup. Bash and zsh load their native `dev shell-init`
 wrapper for parent-directory navigation and cache their generated completion.

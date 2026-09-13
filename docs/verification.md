@@ -135,6 +135,34 @@ The [Checks workflow](https://github.com/daviddwlee84/dotfiles-Termux/actions/wo
 records the final revision's macOS/Ubuntu results. Reboot/background and fresh
 ADB pairing remain separate gates; saved USB SSH pairing was reused here.
 
+## Native SSH setup fix — 2026-09-13
+
+On ARM64 Android 15 with native Termux Go 1.27.1 and Clang:
+
+- The original v0.2.35 SSH wizard rejected Android's system-owned `/data`;
+  discovery cache writes also failed because directory reads at `/` and hard-link
+  publication are denied in the app sandbox.
+- The v0.2.36 fix verifies the private Termux home boundary, preserves inherited
+  SELinux/encryption metadata, and publishes new files with `RENAME_NOREPLACE`.
+  No Android system permissions or security policy were changed.
+- Eight native filesystem/SSH domain test packages and the SSH TUI adapter tests
+  passed, including native key generation, cache persistence and label-mismatch
+  rejection. Hard-link attack fixtures explicitly skip when Android refuses to
+  construct them; desktop tests retain that coverage.
+- In the actual Termux dashboard, a reviewed configuration-only connection
+  initialized SSH config, created its managed fragment and machine binding,
+  passed native effective-configuration verification and returned `SSH setup:
+  ready`. The connection appeared as managed in the SSH list.
+
+After publication, the real `dev upgrade --yes` upgraded the installed v0.2.35
+to v0.2.36 using the checksummed 3,687,265-byte source archive. Download and
+native compilation took **18.5 seconds with warm dependency/build caches**.
+`dev --version` and `dev upgrade --check` confirmed v0.2.36; a private recovery
+copy of v0.2.35 was retained.
+
+This verifies configuration creation and native filesystem handling. The live
+connection was not authenticated, and no key was installed on the remote host.
+
 ## Native dev upgrade to v0.2.35 — 2026-09-13
 
 On the ARM64 Android 15 device with native Termux Go 1.27.1 and Clang:
