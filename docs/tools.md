@@ -7,7 +7,7 @@ for the exact completed and pending checks.
 
 | Tool | Installation path | Support level here |
 | --- | --- | --- |
-| chezmoi, Bash, Starship, Git, Vim, tmux, Python and build utilities | Official Termux packages | Native baseline; device acceptance still required |
+| chezmoi, Bash, Starship, Git, Vim, tmux, Python, uv/uvx and build utilities | Official Termux packages | Native baseline; device acceptance still required |
 | Node.js LTS and npm | Official Termux packages | Runtime for Pi |
 | Pi | Maintained `@earendil-works/pi-coding-agent` npm package | Native default, controlled by `installCodingAgents` |
 | Herdr | Pinned upstream Linux static binary | Explicit native experiment |
@@ -21,6 +21,12 @@ release assets when a native package exists. The official package recipes
 include [chezmoi](https://github.com/termux/termux-packages/blob/master/packages/chezmoi/build.sh)
 and [Starship](https://github.com/termux/termux-packages/blob/master/packages/starship/build.sh).
 Neovim is also available as a separate Termux package if you prefer it.
+
+## Native Python and uv
+
+Python and uv/uvx are installed by `pkg`; they do not use the generic Linux
+installer. The create-once uv config selects system Python, disables managed
+Python downloads and uses copy mode. See [shell and Python usage](shell.md).
 
 ## Pi
 
@@ -95,8 +101,8 @@ do not replace existing optional binaries. An earlier experimental Linux `dev`
 needs an explicit backup/removal before the native installation; see the migration
 above. New installs use the Android source build directly.
 
-Open a new Bash shell after setup. Interactive shells load `dev shell-init bash`
-for parent-directory navigation and `dev completion bash` for tab completion.
+Open a new shell after setup. Bash and zsh load their native `dev shell-init`
+wrapper for parent-directory navigation and cache their generated completion.
 Shell startup performs no installation. Keep Termux's `$TMPDIR` pointing at
 `$PREFIX/tmp`, since navigation uses private temporary files. Verify:
 

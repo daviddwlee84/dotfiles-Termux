@@ -5,7 +5,8 @@ REPO=$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
 source "$REPO/scripts/pair.sh"
 termux_context
 if (($#)); then
-    [[ $# == 7 ]] || exit 1
+    [[ $# == 7 || $# == 8 ]] || exit 1
     INSTALL_SSH=$1 SSH_MODE=$2 SSH_PORT=$3 INSTALL_BOOT=$4 WAKE_LOCK=$5 INSTALL_AGENTS=$6 OPTIONAL_TOOLS=$7
+    PRIMARY_SHELL=${8:-bash}
     termux_validate_settings
 fi

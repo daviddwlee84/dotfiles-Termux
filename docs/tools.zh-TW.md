@@ -6,7 +6,7 @@
 
 | 工具 | 安裝方式 | 此 repo 的支援層級 |
 | --- | --- | --- |
-| chezmoi、Bash、Starship、Git、Vim、tmux、Python 與編譯工具 | 官方 Termux 套件 | 原生基礎；仍需裝置驗收 |
+| chezmoi、Bash、Starship、Git、Vim、tmux、Python、uv/uvx 與編譯工具 | 官方 Termux 套件 | 原生基礎；仍需裝置驗收 |
 | Node.js LTS 與 npm | 官方 Termux 套件 | Pi runtime |
 | Pi | 維護中的 `@earendil-works/pi-coding-agent` npm 套件 | 原生預設，由 `installCodingAgents` 控制 |
 | Herdr | 固定版本上游 Linux static binary | 明確選用的原生實驗 |
@@ -20,6 +20,12 @@ release asset。官方 recipes 包含
 [chezmoi](https://github.com/termux/termux-packages/blob/master/packages/chezmoi/build.sh)
 與 [Starship](https://github.com/termux/termux-packages/blob/master/packages/starship/build.sh)。
 偏好 Neovim 時，也可以另外安裝其 Termux 套件。
+
+## 原生 Python 與 uv
+
+Python 與 uv/uvx 由 `pkg` 安裝，不使用一般 Linux installer。只建立一次的
+uv config 選用系統 Python、停用 managed Python 下載，並使用 copy 模式。
+使用方式見 [Shell 與 Python](shell.md)。
 
 ## Pi
 
@@ -88,8 +94,8 @@ Go 的 Android target 會避開這個被封鎖的呼叫，因此 static ELF 並�
 若先前裝過實驗性的 Linux `dev`，必須先明確備份並移走它，才能安裝原生版；
 方式見上述遷移紀錄。全新安裝直接使用 Android source build。
 
-setup 後開啟新的 Bash shell。互動 shell 會載入 `dev shell-init bash`，讓指令
-能切換目前 shell 的目錄，並載入 `dev completion bash` 提供 Tab 補全。
+setup 後開啟新的 shell。Bash 與 zsh 各自載入原生的 `dev shell-init`，讓指令
+能切換目前 shell 的目錄，並快取產生的補全腳本。
 shell 啟動不會安裝套件。目錄切換需要私有暫存檔，請保留 Termux 的 `$TMPDIR`
 指向 `$PREFIX/tmp`。驗證方式：
 

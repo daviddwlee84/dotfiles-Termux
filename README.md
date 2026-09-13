@@ -7,8 +7,9 @@ experimental repository; ARM64 is the first runtime target.
 [English guide](docs/setup.md) · [繁體中文指南](docs/setup.zh-TW.md) ·
 [Tool compatibility](docs/tools.md) · [Verification](docs/verification.md)
 
-The default setup provides Bash, chezmoi, Starship, Git, Vim, tmux,
-development utilities, Node.js and Pi. Public-key SSH listens on port 8022;
+New setups use native zsh with a small Oh My Zsh configuration, autosuggestions,
+syntax highlighting and Starship. Bash remains available for management scripts.
+The baseline includes chezmoi, Git, Vim, tmux, Python, uv/uvx, Node.js and Pi. Public-key SSH listens on port 8022;
 Termux:Boot integration is enabled and wake-lock is off. Herdr and Codex are
 explicit native experiments (`--with herdr,codex`). Our dev-cli (`dev`) is also
 opt-in: use `--with herdr,dev` for Herdr 0.9.0 and dev-cli 0.2.33. Claude Code has a separate
@@ -26,13 +27,13 @@ On **macOS/Linux**, from an existing clone of this repository, connect and
 authorize the Android USB device, then run:
 
 ```sh
-uv run --script scripts/host.py setup --with herdr,codex,dev --install-coding-agents true
+uv run --script scripts/host.py setup --with herdr,codex,dev --install-coding-agents true --primary-shell zsh
 ```
 
 From the umbrella **dotfiles-all** clone, the equivalent is:
 
 ```sh
-just termux-setup --with herdr,codex,dev --install-coding-agents true
+just termux-setup --with herdr,codex,dev --install-coding-agents true --primary-shell zsh
 ```
 
 If the device already has an older checkout, update it with the existing-device
@@ -42,7 +43,7 @@ For a **fresh native Termux shell**, without a computer, this single line
 installs Git, clones the repository and runs setup:
 
 ```sh
-pkg update -y && pkg upgrade -y && pkg install -y git && mkdir -p "$HOME/.local/share" && git clone https://github.com/daviddwlee84/dotfiles-Termux.git "$HOME/.local/share/dotfiles-Termux" && bash "$HOME/.local/share/dotfiles-Termux/bootstrap.sh" setup --with herdr,codex,dev --install-coding-agents true
+pkg update -y && pkg upgrade -y && pkg install -y git && mkdir -p "$HOME/.local/share" && git clone https://github.com/daviddwlee84/dotfiles-Termux.git "$HOME/.local/share/dotfiles-Termux" && bash "$HOME/.local/share/dotfiles-Termux/bootstrap.sh" setup --with herdr,codex,dev --install-coding-agents true --primary-shell zsh
 ```
 
 This selects **Herdr 0.9.0**, **dev-cli 0.2.33** (`dev`), **Pi 0.85.1** and
@@ -58,21 +59,46 @@ If the Termux clone already exists, use this line **inside Termux** to update
 its source/configuration and install the selected tools:
 
 ```sh
-cd "$HOME/.local/share/dotfiles-Termux" && bash bootstrap.sh update && bash bootstrap.sh packages --with herdr,codex,dev --install-coding-agents true
+cd "$HOME/.local/share/dotfiles-Termux" && bash bootstrap.sh update && bash bootstrap.sh packages --with herdr,codex,dev --install-coding-agents true --primary-shell zsh
 ```
 
 `--with` replaces the saved optional list; omitting it preserves that list.
 Existing binaries are retained, so these commands install missing tools but
-do not force their versions. Open a new Bash shell for dev navigation and
-tab completion. Device-only setup leaves SSH `pending-key` until you add a
+do not force their versions. Open a new shell for dev navigation and tab completion. Device-only setup leaves SSH `pending-key` until you add a
 trusted public key; computer setup pairs one automatically.
 
 **Yes, chezmoi manages this afterward.** `chezmoi diff`, `chezmoi apply` and
 `chezmoi update` work from any directory after setup. They manage configuration;
 `just packages` / `just upgrade` inside the Termux clone explicitly synchronize
 packages. New tool selections require `packages` or setup. dev's own config
-and the create-once Herdr config remain locally editable. See
+and the seed-preserving Herdr config remain locally editable. See
 [saved settings and maintenance](docs/setup.md#configuration-and-package-updates).
+
+## Shell helpers and Python
+
+Both shells provide `abspath`, `source-rc` / `reload`, and `chezmoi-cd`.
+The saved `primaryShell` selects `bash` or `zsh`; existing installations keep
+what they used until explicitly changed. To switch or return to Bash:
+
+```sh
+# Inside the updated Termux clone:
+bash bootstrap.sh packages --primary-shell zsh
+bash bootstrap.sh apply --primary-shell bash
+```
+
+Existing terminal panes stay running. New Termux/SSH logins use the selected
+shell; the managed Herdr seed follows it for new sessions. Custom Herdr
+configuration is preserved. See [shell behavior and measured startup](docs/shell.md).
+
+`uv` and Python are native **pkg** packages. `uv venv` and `uv run` use the
+installed Termux Python; the create-once uv config disables managed Python
+downloads and selects copy mode because Android app storage rejects hardlinks.
+For example: `uv run --no-project --with packaging==25.0 python -c 'import packaging; print(packaging.__version__)'`.
+
+Most dependencies come from `pkg`. The exceptions are the native dev-cli
+source build, pinned Herdr/Codex binaries, Pi's npm package, and pinned
+Oh My Zsh/plugin archives. Package updates remain explicit; shell startup
+never downloads or upgrades these components.
 
 ## Set up a connected device
 

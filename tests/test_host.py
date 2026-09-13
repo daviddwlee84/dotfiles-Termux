@@ -79,6 +79,19 @@ class HostTests(unittest.TestCase):
         for command in (["--serial", "one", "setup"], ["setup", "--serial", "one"]):
             self.assertEqual(host.parser().parse_args(command).serial, "one")
 
+    def test_primary_shell_is_forwarded_only_when_explicit(self):
+        default = host.parser().parse_args(['setup'])
+        self.assertNotIn('--primary-shell', host.setup_options(default))
+        selected = host.parser().parse_args(['setup', '--primary-shell', 'zsh'])
+        options = host.setup_options(selected)
+        self.assertEqual(options[options.index('--primary-shell') + 1], 'zsh')
+
+    def test_new_idle_shell_accepts_zsh_and_rejects_ambiguous_sessions(self):
+        for name in ('zsh', '-zsh', '/native/bin/zsh', 'bash', '-bash'):
+            self.assertEqual(host.new_idle_shell({}, {100: (1, name)}), 100)
+            self.assertIsNone(host.new_idle_shell({}, {100: (1, name), 101: (100, 'git')}))
+        self.assertIsNone(host.new_idle_shell({}, {100: (1, 'bash'), 101: (1, 'zsh')}))
+
     def test_setup_accepts_dev_and_rejects_unknown_tools_before_device_access(self):
         with mock.patch.object(host, "list_devices", return_value=[{"serial": "one", "state": "device"}]), \
              mock.patch.object(host, "setup") as setup:
@@ -222,10 +235,10 @@ class HostTests(unittest.TestCase):
         before = {1: (0, "com.termux"), 2: (1, "bash"), 3: (2, "vim")}
         after = dict(before, **{})
         after[4] = (1, "bash")
-        self.assertEqual(host.new_idle_bash(before, after), 4)
+        self.assertEqual(host.new_idle_shell(before, after), 4)
         after[5] = (4, "claude")
-        self.assertIsNone(host.new_idle_bash(before, after))
-        self.assertIsNone(host.new_idle_bash(before, before))
+        self.assertIsNone(host.new_idle_shell(before, after))
+        self.assertIsNone(host.new_idle_shell(before, before))
 
     def test_ui_failure_never_sends_text_to_existing_session(self):
         adb = mock.Mock()

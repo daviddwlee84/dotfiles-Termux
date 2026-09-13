@@ -17,7 +17,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y shellcheck
+          sudo apt-get install -y shellcheck zsh
           curl -fL --retry 3 https://github.com/twpayne/chezmoi/releases/download/v2.72.1/chezmoi_2.72.1_linux-musl_amd64.tar.gz -o "$RUNNER_TEMP/chezmoi.tar.gz"
           test "$(wc -c < "$RUNNER_TEMP/chezmoi.tar.gz")" -eq 15709577
           printf '%s  %s\n' b961e2972d6fcd1002f9b986d4a61dc5da288e96aab226434fd5b20a7de80cf9 "$RUNNER_TEMP/chezmoi.tar.gz" | sha256sum -c -
@@ -26,7 +26,7 @@ jobs:
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Install validation tools on macOS
         if: runner.os == 'macOS'
-        run: brew install shellcheck chezmoi
+        run: brew install shellcheck chezmoi zsh
       - name: Lint and validate metadata
         run: bash scripts/lint.sh
       - name: Isolated host and target fixtures

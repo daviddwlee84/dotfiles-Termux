@@ -1,0 +1,14 @@
+#!{{ .termuxPrefix }}/bin/bash
+set -euo pipefail
+{{- $shell := get . "primaryShell" | default "bash" }}
+{{ if eq $shell "zsh" -}}
+# Configuration-only apply must not select an unavailable shell in Herdr.
+if [[ ! -x '{{ .termuxPrefix }}/bin/zsh' ]] || ! '{{ .termuxPrefix }}/bin/bash' '{{ .chezmoi.workingTree | replace "'" "'\\''" }}/scripts/zsh-assets.sh' check >/dev/null 2>&1; then
+    cat
+    exit 0
+fi
+{{ end -}}
+exec python3 '{{ .chezmoi.workingTree | replace "'" "'\\''" }}/scripts/herdr-shell.py' render \
+    '{{ .chezmoi.homeDir | replace "'" "'\\''" }}/.config/herdr/config.toml' \
+    '{{ .chezmoi.homeDir | replace "'" "'\\''" }}/.local/state/dotfiles-termux' \
+    '{{ .termuxPrefix | replace "'" "'\\''" }}' '{{ $shell }}'

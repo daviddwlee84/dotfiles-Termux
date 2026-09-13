@@ -4,7 +4,7 @@ dotfiles-Termux 將 Termux 設定成小型開發環境，並提供 macOS/Linux h
 透過 ADB 完成首次安裝。這是受到 dotfiles-iSH 啟發的獨立實驗性 repository，
 使用原生 Termux 套件，不共用 iSH 的 Alpine bootstrap。
 
-從[安裝指南](setup.md)開始。預設包含 chezmoi、Bash、Starship、Git、
+從[安裝指南](setup.md)開始。預設包含 chezmoi、zsh（腳本保留 Bash）、Python、uv、Starship、Git、
 Vim、tmux、開發工具、Node.js 與 Pi。公鑰 SSH 與 Termux:Boot
 整合預設啟用；wake-lock 預設關閉。Herdr 與 Codex 是明確選用的原生實驗，
 必須另外完成[相容性驗證](tools.md)。

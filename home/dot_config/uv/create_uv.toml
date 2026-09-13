@@ -1,0 +1,4 @@
+# Native Termux Python comes from pkg; preserve later local choices.
+python-preference = "only-system"
+python-downloads = "never"
+link-mode = "copy"

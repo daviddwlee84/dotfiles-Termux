@@ -6,6 +6,7 @@ source "$REPO/scripts/pair.sh"
 termux_context
 termux_defaults
 CONFIG=${CHEZMOI_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/chezmoi/chezmoi.toml}
+CONFIG_NEEDS_SHELL_MIGRATION=false
 
 source_preflight() {
     local source_path default_source="$HOME/.local/share/chezmoi"
@@ -30,8 +31,11 @@ installTermuxBoot={{ .installTermuxBoot }}
 termuxWakeLock={{ .termuxWakeLock }}
 installCodingAgents={{ .installCodingAgents }}
 optionalTools={{ .optionalTools }}
+{{ if hasKey . "primaryShell" }}primaryShell={{ .primaryShell }}
+{{ end }}
 {{ end }}') || return 1
     termux_read_settings <<<"$choices"
+    if ! grep -q '^primaryShell=' <<<"$choices"; then CONFIG_NEEDS_SHELL_MIGRATION=true; fi
 }
 
 source_preflight
@@ -50,10 +54,11 @@ while (($#)); do
             printf '%s\n' 'bootstrap.sh [setup|apply|update|packages|upgrade|doctor] [--non-interactive] [--dry-run]' \
                 '  --install-ssh-server true|false --ssh-mode lan|adb --ssh-port 8022' \
                 '  --install-termux-boot true|false --termux-wake-lock true|false' \
+                '  --primary-shell bash|zsh (fresh setup: zsh; existing choices preserved)' \
                 '  --install-coding-agents true|false --with herdr,codex,dev --authorized-key-file FILE' \
                 'setup/packages/upgrade synchronize all Termux packages; apply/update change configuration only.'
             exit 0 ;;
-        --authorized-key-file|--ssh-mode|--ssh-port|--install-ssh-server|--install-termux-boot|--termux-wake-lock|--install-coding-agents|--with)
+        --authorized-key-file|--ssh-mode|--ssh-port|--primary-shell|--install-ssh-server|--install-termux-boot|--termux-wake-lock|--install-coding-agents|--with)
             [[ $# -ge 2 ]] || { termux_die "$1 needs a value"; exit 1; }
             case "$1" in
                 --authorized-key-file) KEY_FILE=$2 ;;
@@ -64,6 +69,7 @@ while (($#)); do
                 --termux-wake-lock) WAKE_LOCK=$2 ;;
                 --install-coding-agents) INSTALL_AGENTS=$2 ;;
                 --with) OPTIONAL_TOOLS=$2 ;;
+                --primary-shell) PRIMARY_SHELL=$2; export DOTFILES_SHELL_EXPLICIT=true ;;
             esac
             [[ $1 == --authorized-key-file ]] || CHOICES_CHANGED=true
             shift 2 ;;
@@ -92,6 +98,7 @@ install_packages() {
     while IFS= read -r package; do
         [[ -z $package || $package == \#* ]] || packages+=("$package")
     done <"$REPO/config/packages-base.txt"
+    [[ $PRIMARY_SHELL != zsh ]] || packages+=(zsh zsh-completions)
     # The Linux dev-cli release hits Android's syscall filter in exec.LookPath.
     # Build with the native Go toolchain, only when dev is selected.
     case ",$OPTIONAL_TOOLS," in *,dev,*) packages+=(golang) ;; esac
@@ -106,7 +113,10 @@ install_packages() {
     pkg install -y "${packages[@]}" || return 1
     ssh-keygen -A || return 1
     BASELINE_READY=true
-    if [[ -n $selected_tools ]]; then bash "$REPO/scripts/tools.sh" install "$selected_tools"; fi
+    local failed=0
+    if [[ $PRIMARY_SHELL == zsh ]]; then bash "$REPO/scripts/zsh-assets.sh" install || failed=1; fi
+    if [[ -n $selected_tools ]]; then bash "$REPO/scripts/tools.sh" install "$selected_tools" || failed=1; fi
+    return "$failed"
 }
 
 initialize_config() {
@@ -122,17 +132,20 @@ initialize_config() {
     export DOTFILES_INIT_SSH=$INSTALL_SSH DOTFILES_INIT_MODE=$SSH_MODE DOTFILES_INIT_PORT=$SSH_PORT
     export DOTFILES_INIT_BOOT=$INSTALL_BOOT DOTFILES_INIT_WAKE=$WAKE_LOCK DOTFILES_INIT_AGENTS=$INSTALL_AGENTS
     export DOTFILES_INIT_TOOLS=$OPTIONAL_TOOLS DOTFILES_INIT_FROM_BOOTSTRAP=true
+    export DOTFILES_INIT_SHELL=$PRIMARY_SHELL
     if ! chezmoi --config "$CONFIG" --source "$REPO" --destination "$HOME" init; then
         [[ -z $backup ]] || cp "$backup" "$CONFIG"
         return 1
     fi
     unset DOTFILES_INIT_SSH DOTFILES_INIT_MODE DOTFILES_INIT_PORT DOTFILES_INIT_BOOT
     unset DOTFILES_INIT_WAKE DOTFILES_INIT_AGENTS DOTFILES_INIT_TOOLS DOTFILES_INIT_FROM_BOOTSTRAP
+    unset DOTFILES_INIT_SHELL
     CHOICES_CHANGED=false
+    CONFIG_NEEDS_SHELL_MIGRATION=false
 }
 
 apply_configuration() {
-    if [[ ! -f $CONFIG || $CHOICES_CHANGED == true ]]; then initialize_config; fi
+    if [[ ! -f $CONFIG || $CHOICES_CHANGED == true || $CONFIG_NEEDS_SHELL_MIGRATION == true ]]; then initialize_config; fi
     [[ -z $KEY_FILE ]] || termux_authorize_key "$KEY_FILE"
     chezmoi --config "$CONFIG" --source "$REPO" --destination "$HOME" apply
 }
@@ -142,7 +155,8 @@ case "$ACTION" in
         termux_say "Native Termux prefix=$PREFIX source=$REPO"
         termux_print_settings
         bash "$REPO/scripts/ssh.sh" doctor
-        [[ ! -f $REPO/scripts/tools.sh ]] || bash "$REPO/scripts/tools.sh" doctor ;;
+        [[ ! -f $REPO/scripts/tools.sh ]] || bash "$REPO/scripts/tools.sh" doctor
+        bash "$REPO/scripts/shell.sh" doctor ;;
     pull) pull_source ;;
     update) pull_source; apply_configuration ;;
     apply) apply_configuration ;;

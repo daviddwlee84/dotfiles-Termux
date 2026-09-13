@@ -10,7 +10,7 @@
 與 Codex 0.153.4：
 
 ```sh
-uv run --script scripts/host.py setup --with herdr,codex,dev --install-coding-agents true
+uv run --script scripts/host.py setup --with herdr,codex,dev --install-coding-agents true --primary-shell zsh
 ```
 
 若裝置之前已安裝過，先用下方指令更新裝置上的 checkout，再透過電腦 setup
@@ -21,7 +21,7 @@ uv run --script scripts/host.py setup --with herdr,codex,dev --install-coding-ag
 如果裝置上已有 checkout，在 Termux 執行：
 
 ```sh
-cd "$HOME/.local/share/dotfiles-Termux" && bash bootstrap.sh update && bash bootstrap.sh packages --with herdr,codex,dev --install-coding-agents true
+cd "$HOME/.local/share/dotfiles-Termux" && bash bootstrap.sh update && bash bootstrap.sh packages --with herdr,codex,dev --install-coding-agents true --primary-shell zsh
 ```
 
 只要 Herdr/dev-cli、不選 Codex 時用 `--with herdr,dev`；Pi 仍啟用。
@@ -30,7 +30,7 @@ cd "$HOME/.local/share/dotfiles-Termux" && bash bootstrap.sh update && bash boot
 
 setup 後可在任意目錄執行 `chezmoi diff/apply/update` 管理受管理設定；
 新增選用工具與完整套件同步則用 `packages`。dev config 由使用者管理，
-Herdr config 是只建立一次的 seed。開啟新 Bash shell 後就會載入 dev 的目錄
+Herdr modifier 只調整未經自訂的 seed，保留其他內容。開啟新的 shell 後就會載入 dev 的目錄
 切換與補全功能。
 
 ## 指令要在哪裡執行？
@@ -228,7 +228,7 @@ chezmoi execute-template '{{ .chezmoi.workingTree }}'
 再重跑明確的套件操作。參考 [Termux 套件管理](https://github.com/termux/termux-packages/wiki/Package-Management)。
 
 裝置端選擇會保留至下次執行。省略 `--with` 保留 Herdr/Codex/dev-cli 選擇；提供它會取代
-選擇清單，但不解除安裝既有工具。Pi 由 `--install-coding-agents true|false`
+選擇清單，但不解除安裝既有工具。Pi 由 `--install-coding-agents true --primary-shell zsh|false`
 控制，預設 true。電腦與裝置端其他布林選項包含 `--install-ssh-server`、
 `--install-termux-boot` 與 `--termux-wake-lock`。
 
@@ -250,6 +250,7 @@ chezmoi execute-template '{{ .chezmoi.workingTree }}'
 | `installTermuxBoot` | `true` | Start SSH with Termux Boot |
 | `termuxWakeLock` | `false` | Acquire wake lock at boot |
 | `installCodingAgents` | `true` | Install coding agents (Pi) |
+| `primaryShell` | `"zsh"`（全新安裝） | Primary interactive shell |
 | `optionalTools` | `""` | Optional tools (herdr,codex,dev or empty) |
 
 init data 的套件選擇在下次明確的 setup/packages/upgrade 生效；僅套用設定不會

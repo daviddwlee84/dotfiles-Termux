@@ -5,7 +5,7 @@ macOS/Linux helpers for first setup over ADB. It is a standalone experimental
 repository inspired by dotfiles-iSH; it uses native Termux packages and does
 not share iSH's Alpine bootstrap.
 
-Start with the [setup guide](setup.md). The default includes chezmoi, Bash,
+Start with the [setup guide](setup.md). The default includes chezmoi, zsh (Bash for scripts), Python, uv,
 Starship, Git, Vim, tmux, development utilities, Node.js and Pi.
 Public-key SSH and Termux:Boot integration are enabled; wake-lock is off.
 Herdr and Codex are optional native experiments, with explicit

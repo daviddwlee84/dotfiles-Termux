@@ -56,6 +56,7 @@ termux_read_settings() {
             termuxWakeLock) WAKE_LOCK=$value ;;
             installCodingAgents) INSTALL_AGENTS=$value ;;
             optionalTools) OPTIONAL_TOOLS=$value ;;
+            primaryShell) PRIMARY_SHELL=$value ;;
             *) termux_die "Unknown saved setting: $key"; return 1 ;;
         esac
     done
@@ -63,16 +64,40 @@ termux_read_settings() {
 
 termux_defaults() {
     INSTALL_SSH=true SSH_MODE=lan SSH_PORT=8022 INSTALL_BOOT=true
-    WAKE_LOCK=false INSTALL_AGENTS=true OPTIONAL_TOOLS=''
+    WAKE_LOCK=false INSTALL_AGENTS=true OPTIONAL_TOOLS='' PRIMARY_SHELL=''
     local path
     for path in "$TERMUX_STATE/settings" "$TERMUX_CONFIG/settings"; do
         [[ ! -L $path ]] || { termux_die "Settings symlink preserved: $path"; return 1; }
         [[ ! -f $path ]] || termux_read_settings <"$path" || return 1
     done
+    if [[ -z $PRIMARY_SHELL ]]; then
+        if [[ -f $TERMUX_STATE/settings || -f $TERMUX_CONFIG/settings || -f ${CHEZMOI_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/chezmoi/chezmoi.toml} ]]; then
+            PRIMARY_SHELL=$(termux_current_shell)
+        else
+            PRIMARY_SHELL=zsh
+        fi
+    fi
+}
+
+termux_current_shell() {
+    local target
+    if [[ -L $HOME/.termux/shell ]]; then
+        target=$(readlink "$HOME/.termux/shell")
+        case "$target" in
+            "$PREFIX/bin/bash") printf 'bash\n' ;;
+            "$PREFIX/bin/zsh") printf 'zsh\n' ;;
+            *) printf 'unknown\n' ;;
+        esac
+    elif [[ -e $HOME/.termux/shell ]]; then
+        printf 'unknown\n'
+    else
+        printf 'bash\n'
+    fi
 }
 
 termux_validate_settings() {
     local value option
+    [[ ${PRIMARY_SHELL:-bash} == bash || ${PRIMARY_SHELL:-bash} == zsh ]] || { termux_die 'Unknown login shell preserved; choose --primary-shell bash|zsh explicitly'; return 1; }
     for value in "$INSTALL_SSH" "$INSTALL_BOOT" "$WAKE_LOCK" "$INSTALL_AGENTS"; do
         [[ $value == true || $value == false ]] || { termux_die 'Boolean choices must be true or false'; return 1; }
     done
@@ -93,7 +118,7 @@ termux_validate_settings() {
 termux_print_settings() {
     printf '%s\n' "installSshServer=$INSTALL_SSH" "sshMode=$SSH_MODE" "sshPort=$SSH_PORT" \
         "installTermuxBoot=$INSTALL_BOOT" "termuxWakeLock=$WAKE_LOCK" \
-        "installCodingAgents=$INSTALL_AGENTS" "optionalTools=$OPTIONAL_TOOLS"
+        "installCodingAgents=$INSTALL_AGENTS" "optionalTools=$OPTIONAL_TOOLS" "primaryShell=${PRIMARY_SHELL:-bash}"
 }
 
 termux_save_settings() {

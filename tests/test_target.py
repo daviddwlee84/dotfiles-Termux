@@ -8,6 +8,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+import tomllib
 import time
 import unittest
 
@@ -127,7 +128,7 @@ class TargetTests(unittest.TestCase):
         return self.run_command([BASH, str(self.repo / "bootstrap.sh"), *args], expected=expected)
 
     def configure(self, *args):
-        return self.bootstrap("setup", "--non-interactive", "--install-coding-agents", "false", *args)
+        return self.bootstrap("setup", "--non-interactive", "--install-coding-agents", "false", "--primary-shell", "bash", *args)
 
     @property
     def config(self):
@@ -158,6 +159,85 @@ class TargetTests(unittest.TestCase):
         output = self.run_command([BASH, str(REPO / "bootstrap.sh"), "--help"], env=env)
         self.assertIn("--ssh-mode", output)
         self.assertEqual(list(self.home.iterdir()), [])
+
+    def test_fresh_default_is_zsh_but_legacy_configuration_migrates_as_bash(self):
+        self.assertIn('primaryShell=zsh', self.bootstrap('--dry-run'))
+        # Establish the old managed-file baseline through chezmoi, rather than
+        # editing a deployed managed file (which should trigger a drift prompt).
+        self.repo = self.root / 'legacy-repo'
+        shutil.copytree(REPO, self.repo, ignore=shutil.ignore_patterns('.git', 'site', '__pycache__'))
+        template = self.repo / 'home/dot_config/dotfiles-termux/private_settings.tmpl'
+        current_template = template.read_text()
+        template.write_text(''.join(line for line in current_template.splitlines(keepends=True)
+                                    if not line.startswith('primaryShell')))
+        self.configure()
+        for path in (self.config, self.home / '.config/dotfiles-termux/settings',
+                     self.home / '.local/state/dotfiles-termux/settings'):
+            path.write_text(''.join(line for line in path.read_text().splitlines(keepends=True)
+                                    if not line.strip().startswith('primaryShell')))
+        template.write_text(current_template)
+        (self.root / 'packages').unlink()
+        self.bootstrap('apply')
+        self.assertEqual(tomllib.loads(self.config.read_text())['data']['primaryShell'], 'bash')
+        self.assertFalse((self.root / 'packages').exists())
+
+    def test_unknown_existing_shell_requires_explicit_selection(self):
+        self.configure()
+        for path in (self.config, self.home / '.config/dotfiles-termux/settings',
+                     self.home / '.local/state/dotfiles-termux/settings'):
+            path.write_text(''.join(line for line in path.read_text().splitlines(keepends=True)
+                                    if not line.strip().startswith('primaryShell')))
+        override = self.home / '.termux/shell'
+        override.symlink_to(self.bin / 'fish')
+        self.bootstrap('--dry-run', expected=1)
+        self.assertIn('primaryShell=bash', self.bootstrap('--dry-run', '--primary-shell', 'bash'))
+        self.assertEqual(os.readlink(override), str(self.bin / 'fish'))
+
+    def test_missing_zsh_keeps_login_shell_and_uv_seed_preserves_local_choice(self):
+        self.configure()
+        uv_config = self.home / '.config/uv/uv.toml'
+        self.assertIn('python-downloads = "never"', uv_config.read_text())
+        uv_config.write_text('python-downloads = "manual"\n')
+        self.bootstrap('apply', '--primary-shell', 'zsh', expected=1)
+        self.assertFalse((self.home / '.termux/shell').exists())
+        self.assertEqual(uv_config.read_text(), 'python-downloads = "manual"\n')
+
+    def seed_zsh(self):
+        self.write_command('zsh', 'exit 0\n')
+        self.write_command('chsh', '[[ $1 == -s ]]\nln -sfn "$2" "$HOME/.termux/shell"\nprintf "%s\\n" "$2" >> "$DOTFILES_TEST_ROOT/chsh-calls"\n')
+        assets = self.home / '.local/share/dotfiles-termux/zsh'
+        assets.mkdir(parents=True)
+        entries = {'oh-my-zsh': 'oh-my-zsh.sh', 'zsh-autosuggestions': 'zsh-autosuggestions.zsh',
+                   'zsh-syntax-highlighting': 'zsh-syntax-highlighting.zsh'}
+        for row in (REPO / 'config/assets.lock').read_text().splitlines():
+            fields = row.split('|')
+            if fields[0] in entries:
+                name, _, version, _, digest, _, _, size = fields
+                path = assets / f'{name}-{version}'
+                path.mkdir()
+                (path / '.dotfiles-receipt').write_text(f'{digest} {size}\n')
+                (path / entries[name]).write_text('# fixture\n')
+        (assets / 'assets.sh').write_text('# Managed by dotfiles-Termux zsh-assets\n')
+
+    def test_shell_switch_is_repeatable_and_preserves_user_rc_and_custom_herdr(self):
+        self.seed_zsh()
+        self.write_command('herdr', 'printf "herdr 0.9.0\\n"\n')
+        (self.home / '.zshrc').write_text('# personal zsh settings\n')
+        self.configure('--primary-shell', 'zsh', '--with', 'herdr')
+        self.assertEqual(os.readlink(self.home / '.termux/shell'), str(self.bin / 'zsh'))
+        rc = (self.home / '.zshrc').read_text()
+        self.assertTrue(rc.startswith('# personal zsh settings\n'))
+        self.assertEqual(rc.count('# >>> dotfiles-termux zsh >>>'), 1)
+        self.bootstrap('apply')
+        self.assertEqual((self.root / 'chsh-calls').read_text().splitlines(), [str(self.bin / 'zsh')])
+        herdr = self.home / '.config/herdr/config.toml'
+        self.assertIn('/bin/zsh', herdr.read_text())
+        self.bootstrap('apply', '--primary-shell', 'bash')
+        self.assertIn('/bin/bash', herdr.read_text())
+        original = herdr.read_text() + '# personal settings\n'
+        herdr.write_text(original)
+        self.bootstrap('apply', '--primary-shell', 'zsh')
+        self.assertEqual(herdr.read_text(), original)
 
     def test_dry_run_and_invalid_options_do_not_write(self):
         self.bootstrap("--dry-run")
@@ -212,6 +292,7 @@ class TargetTests(unittest.TestCase):
     def test_dev_shell_integration_is_interactive_only_and_loaded_once(self):
         self.env["TERM"] = "dumb"
         self.env.pop("DOTFILES_TERMUX_SHELL_LOADED", None)
+        self.env["DOTFILES_TERMUX_CONFIG_DIR"] = str(REPO / "home/dot_config/dotfiles-termux")
         self.write_command("dev", '''printf '%s\\n' "$*" >> "$DOTFILES_TEST_ROOT/dev-calls"
 case "$*" in
     'shell-init bash') printf '%s\\n' 'dev() { builtin cd -- "$HOME/project with spaces"; }' ;;
@@ -257,6 +338,7 @@ esac
         self.configure("--ssh-mode", "lan")
         # Native --prompt re-init intentionally changes saved init choices.
         args = [CHEZMOI, "--config", str(self.config), "--source", str(REPO), "init", "--prompt",
+                "--promptChoice", "Primary interactive shell=bash",
                 "--promptBool", "Install SSH server=false",
                 "--promptChoice", "SSH access mode=adb", "--promptString", "SSH port=9022",
                 "--promptBool", "Start SSH with Termux Boot=false",

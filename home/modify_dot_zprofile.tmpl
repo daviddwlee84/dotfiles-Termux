@@ -1,0 +1,14 @@
+#!{{ .termuxPrefix }}/bin/bash
+set -euo pipefail
+candidate=$(mktemp)
+trap 'rm -f "$candidate"' EXIT
+cat >"$candidate"
+cat "$candidate"
+if ! grep -qF '# >>> dotfiles-termux zsh environment >>>' "$candidate"; then
+    cat <<'EOF'
+
+# >>> dotfiles-termux zsh environment >>>
+[[ ! -r "$HOME/.config/dotfiles-termux/common.sh" ]] || source "$HOME/.config/dotfiles-termux/common.sh"
+# <<< dotfiles-termux zsh environment <<<
+EOF
+fi

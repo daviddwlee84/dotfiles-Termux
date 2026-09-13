@@ -496,9 +496,9 @@ def termux_processes(adb):
     return processes
 
 
-def new_idle_bash(before, after):
+def new_idle_shell(before, after):
     added = {pid: row for pid, row in after.items() if pid not in before}
-    shells = [pid for pid, (_, name) in added.items() if name.rsplit("/", 1)[-1] in ("bash", "-bash")]
+    shells = [pid for pid, (_, name) in added.items() if name.rsplit("/", 1)[-1] in ("bash", "-bash", "zsh", "-zsh")]
     if len(shells) != 1:
         return None
     shell = shells[0]
@@ -508,7 +508,7 @@ def new_idle_bash(before, after):
 
 
 def try_ui_bootstrap(adb, activity, command):
-    """Only send text after a new app-owned, idle Bash session is observed."""
+    """Only send text after a new app-owned, idle Bash/zsh session is observed."""
     try:
         launch_activity(adb, activity)
         deadline = time.monotonic() + 90
@@ -535,11 +535,11 @@ def try_ui_bootstrap(adb, activity, command):
         adb.shell("input", "tap", str((x1 + x2) // 2), str((y1 + y2) // 2))
         time.sleep(2)
         after = termux_processes(adb)
-        shell = new_idle_bash(before, after)
+        shell = new_idle_shell(before, after)
         if shell is None:
-            raise SetupError("A new idle Bash shell could not be verified.")
+            raise SetupError("A new idle Bash/zsh shell could not be verified.")
         time.sleep(1)
-        if new_idle_bash(before, termux_processes(adb)) != shell or not foreground_termux(adb):
+        if new_idle_shell(before, termux_processes(adb)) != shell or not foreground_termux(adb):
             raise SetupError("Termux session changed before input.")
         tree = ui_dump(adb)
         terminal = terminal_node(tree)
@@ -694,7 +694,7 @@ def run_streaming(argv, *, input, timeout):
 
 def setup_options(args):
     options = ["--non-interactive"]
-    for attribute, flag in (("ssh_mode", "--ssh-mode"), ("ssh_port", "--ssh-port"),
+    for attribute, flag in (("primary_shell", "--primary-shell"), ("ssh_mode", "--ssh-mode"), ("ssh_port", "--ssh-port"),
                             ("install_termux_boot", "--install-termux-boot"),
                             ("termux_wake_lock", "--termux-wake-lock"),
                             ("install_ssh_server", "--install-ssh-server"),
@@ -774,7 +774,7 @@ def setup(adb, args):
                 command = bootstrap_command(f"{base}/payload", hashlib.sha256(server.payload).hexdigest())
                 automatic = not args.manual and try_ui_bootstrap(adb, resolve_activity(adb, rows["termux"]), command)
                 if not automatic:
-                    print("Open a NEW Bash shell in Termux and paste this single line. Keep this helper running:\n", flush=True)
+                    print("Open a NEW Bash or zsh shell in Termux and paste this single line. Keep this helper running:\n", flush=True)
                     print(command + "\n", flush=True)
                 print("Waiting for pairing; package synchronization can take several minutes…", flush=True)
                 deadline = time.monotonic() + args.timeout
@@ -846,6 +846,7 @@ def parser():
         if name == "setup":
             sub.add_argument("--manual", action="store_true", help="print the pairing command instead of UI typing")
             sub.add_argument("--api", action="store_true", help="also install Termux:API")
+            sub.add_argument("--primary-shell", choices=("bash", "zsh"), help="interactive shell (fresh setup: zsh)")
             sub.add_argument("--ssh-mode", choices=("lan", "adb"))
             sub.add_argument("--ssh-port", type=int)
             sub.add_argument("--install-termux-boot", choices=("true", "false"))

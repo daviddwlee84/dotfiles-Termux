@@ -19,3 +19,4 @@ fd
 fzf
 rsync
 python
+uv

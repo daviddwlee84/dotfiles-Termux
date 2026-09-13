@@ -3,7 +3,9 @@
 This is a standalone experimental Android/Termux dotfiles repository. Read the
 README and bilingual setup documentation before changing installation.
 
-- Native Termux Bash/pkg and chezmoi only. Never apply the desktop Unix repo,
+- Native Termux Bash/zsh, pkg and chezmoi only. Management and Boot scripts
+  always execute native Bash; zsh is the fresh-install interactive default.
+  Existing login-shell choices survive migration. Never apply the desktop Unix repo,
   use root, or silently introduce PRoot. ARM64 is the first runtime target.
 - `home/` is the chezmoi source root. Preserve existing shell content and user
   settings, foreign chezmoi sources, SSH keys, and unrelated Boot scripts.
@@ -13,6 +15,13 @@ README and bilingual setup documentation before changing installation.
 - Explicit setup/packages/upgrade synchronizes the full Termux package set
   before installation (Termux does not support partial upgrades). Normal
   chezmoi apply/update changes configuration only; Git updates are ff-only.
+- Zsh frameworks/plugins use pinned archives installed only by explicit package
+  operations. Never download/update them on shell startup. Preserve user rc files,
+  completion auditing and custom Herdr settings. Keep shared helpers usable in Bash.
+- Herdr seed retargeting belongs in its pure `modify_` transformation, not an
+  after-hook destination write; see [the repeated-apply conflict](pitfalls/herdr-config-changed-since-chezmoi-last-wrote.md).
+- uv and Python come from pkg. The create-once uv seed selects system Python and
+  disables managed Python downloads; preserve subsequent user configuration.
 - SSH defaults to enabled, LAN, port 8022, public-key authentication only.
   Boot defaults on; wake-lock defaults off. Missing public key is pending-key.
   Own only the namespaced sshd config/PID and Boot hook; never kill foreign

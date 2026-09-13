@@ -6,6 +6,7 @@ for argument in "$@"; do
         printf '%s\n' 'bash bootstrap.sh [setup|apply|update|packages|upgrade|doctor] [--non-interactive] [--dry-run]' \
             '  --install-ssh-server true|false --ssh-mode lan|adb --ssh-port 8022' \
             '  --install-termux-boot true|false --termux-wake-lock true|false' \
+            '  --primary-shell bash|zsh (fresh setup: zsh)' \
             '  --install-coding-agents true|false --with herdr,codex,dev --authorized-key-file FILE' \
             'setup/packages/upgrade synchronize Termux packages; apply/update change configuration only.'
         exit 0
@@ -26,11 +27,12 @@ validate_arguments() {
     while (($#)); do
         case "$1" in
             setup|apply|update|packages|upgrade|doctor|--packages|--upgrade|--doctor|--config-only|--non-interactive) shift ;;
-            --ssh-mode|--ssh-port|--install-ssh-server|--install-termux-boot|--termux-wake-lock|--install-coding-agents|--with|--authorized-key-file)
+            --ssh-mode|--ssh-port|--primary-shell|--install-ssh-server|--install-termux-boot|--termux-wake-lock|--install-coding-agents|--with|--authorized-key-file)
                 [[ $# -ge 2 ]] || { echo "$1 requires a value" >&2; return 1; }
                 value=$2
                 case "$1" in
                     --ssh-mode) [[ $value == lan || $value == adb ]] || return 1 ;;
+                    --primary-shell) [[ $value == bash || $value == zsh ]] || return 1 ;;
                     --ssh-port) [[ $value =~ ^[0-9]{1,5}$ ]] || return 1; ((10#$value >= 1024 && 10#$value <= 65535)) || return 1 ;;
                     --install-*|--termux-wake-lock) [[ $value == true || $value == false ]] || return 1 ;;
                     --with) [[ -z $value || $value =~ ^(herdr|codex|dev)(,(herdr|codex|dev))*$ ]] || return 1 ;;

@@ -1,19 +1,105 @@
 # Shell and configuration
 
-The native shell is Termux Bash. Keep its actual `$PREFIX` and `$HOME` paths;
-do not assume `/usr/bin`, `/etc`, or a desktop Linux username. No root access,
-Ansible, Homebrew, or desktop shell framework is needed on the device.
+Fresh setup uses native Termux zsh. Existing installations retain their saved
+shell; older configurations without `primaryShell` inherit the current login
+shell. Bash stays installed and executes bootstrap, package, SSH and Boot scripts.
+Both shells provide the shared helpers below.
 
-chezmoi manages the `home/` source root. The bootstrap preserves existing
-shell content and adds the managed configuration without turning a foreign
-chezmoi source into this repository. Inspect changes with `just diff`, then
-use `just apply`. Existing user-owned settings and unrelated SSH keys remain
-in place.
+## Select a shell
 
-Starship initializes in interactive Bash sessions. Vim, Git and tmux
-provide a usable editor/source-control/multiplexer baseline before optional
-agents are configured. Try both a local Termux tab and a new SSH login when
-checking prompt and terminal behavior.
+```sh
+# Inside the updated Termux clone:
+bash bootstrap.sh packages --primary-shell zsh
+# Return to Bash without uninstalling anything:
+bash bootstrap.sh apply --primary-shell bash
+# Computer-side equivalent for setup:
+uv run --script scripts/host.py setup --primary-shell zsh
+```
+
+The `primaryShell` chezmoi value persists. Configuration-only apply does not
+install a missing zsh or its plugins: it reports the missing dependency and
+leaves the login shell unchanged. `packages` synchronizes native packages and
+installs the locked assets before switching. The native environment guard and
+all executable management shebangs still require Termux Bash.
+
+New Termux and SSH logins use the selection. Existing panes and multiplexer
+servers keep running. The unchanged Herdr seed follows the selection for new sessions; custom Herdr configuration
+is preserved with an instruction to set `terminal.default_shell` explicitly.
+
+## Interactive features and helpers
+
+The zsh configuration enables a small Oh My Zsh setup with its `git` plugin,
+zsh-autosuggestions, zsh-syntax-highlighting, official zsh-completions, cached
+dev completion and the existing small Starship prompt. It uses Emacs keybindings:
+Tab completes, Ctrl+R searches history, and Right accepts the suggested history
+suffix at the end of the command. Zsh history stays in its own `.zsh_history`;
+Bash history is not converted. Zsh glob and word-splitting rules differ from Bash;
+run Bash scripts with `bash script.sh`.
+
+```sh
+abspath                         # logical current directory, like pwd
+abspath 'file with spaces' ../x  # absolute paths; existence is not required
+abspath -r link                  # resolve symlinks; target must exist
+abspath -t "$HOME/src"           # ~/src
+abspath -- -filename             # a name starting with a dash
+source-rc                        # reload the current shell's rc and helpers
+reload                           # alias for source-rc
+chezmoi-cd                       # enter the effective chezmoi source (home/)
+```
+
+The rc files retain existing content and append a managed block. Bash's existing
+login forwarding remains intact; zsh login configuration supplies the shared
+PATH/helpers without loading interactive plugins. Repeated sourcing does not
+wrap plugins or register prompt hooks repeatedly. `reload` explicitly re-runs
+the current rc, including user content. Persistent overrides belong in
+`~/.config/dotfiles-termux/local.sh` for Bash or `local.zsh` for zsh.
+
+Oh My Zsh and plugins live in namespaced version directories under
+`~/.local/share/dotfiles-termux/zsh`. Downloads are pinned by commit, SHA-256 and
+size in the lockfile. Explicit package operations install new locked versions;
+normal chezmoi apply and shell startup never download or auto-update them.
+Completion auditing remains enabled; completion dumps and generated dev scripts
+use a separate cache. The dev cache regenerates when its binary path or mtime changes.
+
+## Startup measurements
+
+On the ARM64 Android 15 tablet, the final candidate passed 30 interleaved warm
+samples per shell and location on 2026-09-13. These measure native interactive
+rc-to-first-prompt latency, excluding SSH transport and login profiles. Cold
+means empty private completion/dev/prompt caches, not an OS cache flush.
+
+| Location | Managed Bash median / P95 | zsh median / P95 | zsh cold cache |
+| --- | --- | --- | --- |
+| HOME | 116 / 133 ms | 186 / 204 ms | 694 ms |
+| Git repository | 119 / 139 ms | 190 / 208 ms | 692 ms |
+
+The gate is at most +100 ms median, +200 ms P95, and a cold first prompt within
+one second. Removing redundant external cache checks brought Oh My Zsh under
+that gate, so the native-zsh-only fallback was not needed. Reproduce in Termux:
+
+```sh
+python scripts/benchmark-shell.py --managed-bash --candidate-config home/dot_config/dotfiles-termux --repo .
+```
+
+## Python and uv
+
+Python, `uv` and `uvx` come from official `pkg` packages. The create-once
+`~/.config/uv/uv.toml` selects `python-preference = "only-system"`,
+`python-downloads = "never"`, and `link-mode = "copy"`. This keeps the native
+Termux interpreter and avoids the hardlink failure observed in Android app storage.
+Later local changes to this config survive chezmoi apply.
+
+```sh
+uv --version
+uv venv .venv
+uv pip install --python .venv/bin/python packaging==25.0
+uv run --no-project --with packaging==25.0 python -c 'import packaging; print(packaging.__version__)'
+```
+
+The device passed venv creation and a PyPI install using Python 3.14.6 and uv
+0.12.13. Packages requiring native extensions still need Android-compatible
+sources/dependencies; this check does not establish support for every PyPI wheel.
+Use `pkg` for system dependencies and Python/uv upgrades.
 
 ## Native paths
 
@@ -36,7 +122,7 @@ step for exchanging files; bootstrap does not request broad storage access.
 
 ```sh
 # In the Termux repository clone:
-just diff
+chezmoi diff
 just apply
 bash bootstrap.sh update
 ```
