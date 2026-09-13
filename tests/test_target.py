@@ -204,7 +204,7 @@ class TargetTests(unittest.TestCase):
 
     def seed_zsh(self):
         self.write_command('zsh', 'exit 0\n')
-        self.write_command('chsh', '[[ $1 == -s ]]\nln -sfn "$2" "$HOME/.termux/shell"\nprintf "%s\\n" "$2" >> "$DOTFILES_TEST_ROOT/chsh-calls"\n')
+        self.write_command('chsh', '[[ $1 == -s ]]\ncase $2 in /*) chosen=$2;; *) chosen=$PREFIX/bin/$2;; esac\nln -sfn "$chosen" "$HOME/.termux/shell"\nprintf "%s\\n" "$chosen" >> "$DOTFILES_TEST_ROOT/chsh-calls"\n')
         assets = self.home / '.local/share/dotfiles-termux/zsh'
         assets.mkdir(parents=True)
         entries = {'oh-my-zsh': 'oh-my-zsh.sh', 'zsh-autosuggestions': 'zsh-autosuggestions.zsh',

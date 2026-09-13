@@ -37,7 +37,9 @@ fi
 if [[ $current != "$PRIMARY_SHELL" ]]; then
     termux_safe_dir "$HOME/.termux"
     [[ ! -e $HOME/.termux/shell || -L $HOME/.termux/shell ]] || { termux_die 'Non-symlink shell override preserved'; exit 1; }
-    chsh -s "$PREFIX/bin/$PRIMARY_SHELL"
+    # Older Termux chsh prepends PREFIX even to an absolute argument. The
+    # relative name is supported by both those versions and current chsh.
+    chsh -s "$PRIMARY_SHELL"
     [[ $(termux_current_shell) == "$PRIMARY_SHELL" ]] || { termux_die 'Login shell selection did not persist'; exit 1; }
 fi
 

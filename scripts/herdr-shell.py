@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import sys
 import tempfile
+import tomllib
 
 
 def seed(prefix, shell):
@@ -30,7 +31,12 @@ def main():
                 output.write(before)
     elif action == 'doctor':
         if before and not known:
-            print('Herdr custom configuration preserved; set terminal.default_shell explicitly for new sessions.', file=sys.stderr)
+            try:
+                selected = tomllib.loads(before).get('terminal', {}).get('default_shell')
+            except tomllib.TOMLDecodeError:
+                selected = None
+            if selected != prefix + '/bin/' + shell:
+                print('Herdr custom configuration preserved; set terminal.default_shell explicitly for new sessions.', file=sys.stderr)
     else:
         raise ValueError('unknown Herdr shell operation')
 
