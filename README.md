@@ -12,7 +12,7 @@ syntax highlighting and Starship. Bash remains available for management scripts.
 The baseline includes chezmoi, Git, Vim, tmux, Python, uv/uvx, Node.js and Pi. Public-key SSH listens on port 8022;
 Termux:Boot integration is enabled and wake-lock is off. Herdr and Codex are
 explicit native experiments (`--with herdr,codex`). Our dev-cli (`dev`) is also
-opt-in: use `--with herdr,dev` for Herdr 0.9.0 and dev-cli 0.2.33. Claude Code has a separate
+opt-in: use `--with herdr,dev` for Herdr 0.9.0 and dev-cli 0.2.35. Claude Code has a separate
 [PRoot guide](docs/proot.md).
 
 On the first Android 15 device, native SSH, tmux and Herdr session checks
@@ -46,12 +46,15 @@ installs Git, clones the repository and runs setup:
 pkg update -y && pkg upgrade -y && pkg install -y git && mkdir -p "$HOME/.local/share" && git clone https://github.com/daviddwlee84/dotfiles-Termux.git "$HOME/.local/share/dotfiles-Termux" && bash "$HOME/.local/share/dotfiles-Termux/bootstrap.sh" setup --with herdr,codex,dev --install-coding-agents true --primary-shell zsh
 ```
 
-This selects **Herdr 0.9.0**, **dev-cli 0.2.33** (`dev`), **Pi 0.85.1** and
+This selects **Herdr 0.9.0**, **dev-cli 0.2.35** (`dev`), **Pi 0.85.1** and
 **Codex 0.153.4**, alongside the native baseline. Codex's normal sandbox is
 blocked on the tested device; installing it does not make that gate pass.
 dev-cli builds on the device using Termux Go/Clang; the first build downloads
 dependencies and can take several minutes. The generic Linux dev release fails
 on Android during Git lookup and is not used.
+From v0.2.35, `dev upgrade` can use a checksummed source archive for native
+Android upgrades when no matching binary is published. Existing older dev
+installations need the [one-time recovery](https://github.com/daviddwlee84/dev-cli#go-or-source).
 For Herdr + dev-cli + Pi only, use `--with herdr,dev` instead. Claude Code
 requires the separate [PRoot guide](docs/proot.md). See [tool support](docs/tools.md).
 
