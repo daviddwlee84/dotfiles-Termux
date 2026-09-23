@@ -23,6 +23,8 @@ uv run --script scripts/host.py setup --primary-shell zsh
 執行。Herdr 未經自訂的原始 seed 會跟隨選擇供新
 session 使用；自訂 Herdr 設定則保留，並提示明確設定 `terminal.default_shell`。
 
+Herdr 0.9.1 seed 與桌面對齊：固定 Catppuccin Mocha、distinct symbols、priority 排序，以及 workspace／machine + agent／任務標題三行側欄。基本快捷鍵包括 `prefix+|`／`prefix+%` 左右分割、`prefix+-`／`prefix+"` 上下分割、`prefix+R` reload、`prefix+,` 改 tab 名、`prefix+B` 新 worktree、`prefix+Ctrl+1..9` 切 workspace、`prefix+Alt+1..9` 聚焦 agent，以及 workspace 導覽的 j/k。`prefix+G`／`Alt+g` 開 LazyGit 暫時 pane，`prefix+Y` 開 Yazi popup。僅全新設定或逐 byte 相同的舊 seed 會更新；包含 Herdr runtime 寫入的自訂檔案保持不變。
+
 ## 互動功能與 helpers
 
 zsh 採精簡 Oh My Zsh，啟用 `git` plugin、zsh-autosuggestions、

@@ -68,7 +68,7 @@ pkg update && pkg upgrade -y && pkg install -y termux-api
 
 ## dev-cli
 
-Install our repository/task CLI together with Herdr 0.9.0:
+Install our repository/task CLI together with Herdr 0.9.1:
 
 ```sh
 # On the computer, from this standalone clone:

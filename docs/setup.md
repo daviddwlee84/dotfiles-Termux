@@ -6,7 +6,7 @@ Linux. Windows users can follow the device-only instructions below.
 
 ## Quick setup with the selected tools
 
-On the computer, from this clone, select Herdr 0.9.0, dev-cli 0.2.36,
+On the computer, from this clone, select Herdr 0.9.1, dev-cli 0.2.36,
 Pi 0.85.1 and Codex 0.153.4 in one command:
 
 ```sh

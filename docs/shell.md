@@ -26,6 +26,8 @@ New Termux and SSH logins use the selection. Existing panes and multiplexer
 servers keep running. The unchanged Herdr seed follows the selection for new sessions; custom Herdr configuration
 is preserved with an instruction to set `terminal.default_shell` explicitly.
 
+The Herdr 0.9.1 seed aligns with desktop defaults: fixed Catppuccin Mocha, distinct symbols, priority ordering, and three sidebar rows for workspace, machine/agent, and task title. Shared keys are `prefix+|` / `prefix+%` for side-by-side splits, `prefix+-` / `prefix+"` for stacked splits, `prefix+R` reload, `prefix+,` rename tab, `prefix+B` new worktree, `prefix+Ctrl+1..9` workspace selection, `prefix+Alt+1..9` agent focus, and j/k workspace navigation. `prefix+G` / `Alt+g` open a temporary LazyGit pane; `prefix+Y` opens a Yazi popup. Only fresh configurations and byte-identical old seeds update; customized files, including Herdr runtime writes, remain unchanged.
+
 ## Interactive features and helpers
 
 The zsh configuration enables a small Oh My Zsh setup with its `git` plugin,
